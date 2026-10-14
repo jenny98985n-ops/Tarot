@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TAROT_DECK } from '../data/tarotCards';
 import { TarotCard, Orientation, DailyReading } from '../types/tarot';
 import { TarotCardView } from './TarotCardView';
 import { WebSearchModal } from './WebSearchModal';
 import { GoogleSheetsSettingsModal } from './GoogleSheetsSettingsModal';
-import { saveDailyReading, getGoogleSheetsUrl, syncReadingToGoogleSheets } from '../utils/storage';
+import { saveDailyReading, getGoogleSheetsUrl, setGoogleSheetsUrl, syncReadingToGoogleSheets } from '../utils/storage';
 import { sounds } from '../utils/audio';
+import { User } from 'firebase/auth';
+import { getCurrentUser, initAuth, googleSignIn } from '../utils/googleAuth';
+import { syncDailyReadingDirect, getSavedSpreadsheetId, GOOGLE_SPREADSHEET_NAME } from '../utils/googleSheetsSync';
 import { 
   Sparkles, 
   Shuffle, 
@@ -26,7 +29,9 @@ import {
   ExternalLink,
   Bot,
   RefreshCw,
-  Loader2
+  Loader2,
+  Copy,
+  BookOpen
 } from 'lucide-react';
 
 interface DailyDrawProps {
@@ -34,13 +39,21 @@ interface DailyDrawProps {
   onNavigateToJournal?: () => void;
 }
 
+const QUESTION_PRESETS = [
+  '今天的整體能量與心靈功課是什麼？',
+  '目前工作事業遭遇的瓶頸該如何突破？',
+  '這段感情/人際關係的核心功課與指引？',
+  '面對近期的重要抉擇，我需要留意的關鍵提醒？',
+  '如何調適近期的焦慮情緒，找回內在平靜？',
+];
+
 export const DailyDraw: React.FC<DailyDrawProps> = ({
   onReadingSaved,
   onNavigateToJournal,
 }) => {
   const [step, setStep] = useState<'prompt' | 'shuffling' | 'picking' | 'revealed'>('prompt');
   const [drawMode, setDrawMode] = useState<'virtual' | 'physical'>('virtual');
-  const [question, setQuestion] = useState<string>('今天的整體能量與靈魂功課是什麼？');
+  const [question, setQuestion] = useState<string>('今天的整體能量與心靈功課是什麼？');
   const [selectedCard, setSelectedCard] = useState<TarotCard | null>(null);
   const [orientation, setOrientation] = useState<Orientation>('upright');
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
@@ -64,10 +77,42 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
   const [customTagInput, setCustomTagInput] = useState<string>('');
   const [isSaved, setIsSaved] = useState<boolean>(false);
 
+  // AI Grounded Interpretation states (Tailored to Question & Self-Interpretation)
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
+  const [aiSources, setAiSources] = useState<Array<{ title: string; url: string }>>([]);
+  const [isAiInterpreting, setIsAiInterpreting] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [copiedAi, setCopiedAi] = useState<boolean>(false);
+
   // Google Sheets sync state
   const [isSheetsModalOpen, setIsSheetsModalOpen] = useState<boolean>(false);
   const [sheetsSyncStatus, setSheetsSyncStatus] = useState<string | null>(null);
-  const [hasSheetsUrl, setHasSheetsUrl] = useState<boolean>(() => Boolean(getGoogleSheetsUrl()));
+  const [hasSheetsUrl, setHasSheetsUrl] = useState<boolean>(() => Boolean(getGoogleSheetsUrl() || getSavedSpreadsheetId()));
+  const [isSyncingToSheets, setIsSyncingToSheets] = useState<boolean>(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [inlineSheetsUrl, setInlineSheetsUrl] = useState<string>(() => getGoogleSheetsUrl());
+  const [lastSavedReading, setLastSavedReading] = useState<DailyReading | null>(null);
+  const [googleUser, setGoogleUser] = useState<User | null>(() => getCurrentUser());
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState<string>(() => {
+    const id = getSavedSpreadsheetId();
+    return id ? `https://docs.google.com/spreadsheets/d/${id}/edit` : '';
+  });
+
+  useEffect(() => {
+    const unsub = initAuth((user) => {
+      setGoogleUser(user);
+      const id = getSavedSpreadsheetId();
+      if (id) setSpreadsheetUrl(`https://docs.google.com/spreadsheets/d/${id}/edit`);
+      if (user || id || getGoogleSheetsUrl()) {
+        setHasSheetsUrl(true);
+      }
+    }, () => {
+      setGoogleUser(null);
+    });
+    return () => {
+      if (unsub) unsub();
+    };
+  }, []);
 
   // Web search modal
   const [isSearchModalOpen, setIsSearchModalOpen] = useState<boolean>(false);
@@ -233,11 +278,270 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
     }
   };
 
-  // Save to journal
+  // Trigger Google Search Grounded Rider-Waite AI interpretation customized to user question & self-interpretation
+  const handleTriggerAiInterpretation = async () => {
+    if (!selectedCard) return;
+    setIsAiInterpreting(true);
+    setAiError(null);
+    try {
+      const res = await fetch('/api/tarot/search-web', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardName: selectedCard.name,
+          cardNameEn: selectedCard.nameEn,
+          orientation,
+          question,
+          userInterpretation: intuitionNotes,
+          category: selectedCard.arcana === 'major' ? '大阿爾克那心靈原型' : `${selectedCard.suit}小阿爾克那生活實相`,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || '無法取得 AI 偉特檢索解析');
+      }
+
+      setAiAnalysis(data.content);
+      setAiSources(data.sources || []);
+      sounds.playRevealChime();
+    } catch (err: any) {
+      console.error(err);
+      setAiError(err.message || '連線逾時，請確認伺服器後重試。');
+    } finally {
+      setIsAiInterpreting(false);
+    }
+  };
+
+  const handleCopyAiAnalysis = () => {
+    if (!aiAnalysis) return;
+    navigator.clipboard.writeText(aiAnalysis);
+    setCopiedAi(true);
+    setTimeout(() => setCopiedAi(false), 2000);
+  };
+
+  const handleApplyAiToJournal = () => {
+    if (!aiAnalysis) return;
+    if (!reflectionNotes.trim()) {
+      setReflectionNotes(aiAnalysis);
+    } else {
+      setReflectionNotes((prev) => prev + '\n\n---\n【AI 偉特客製化解析參考】：\n' + aiAnalysis);
+    }
+  };
+
+  // Render markdown-like sections for AI analysis
+  const renderAiContent = (text: string) => {
+    if (!text) return null;
+    return text.split('\n\n').map((block, idx) => {
+      const trimmed = block.trim();
+      if (trimmed.startsWith('###') || trimmed.startsWith('##') || trimmed.startsWith('#')) {
+        return (
+          <h4
+            key={idx}
+            className="font-serif font-bold text-amber-300 text-xs sm:text-sm border-b border-stone-800 pb-1 mt-4 first:mt-0 flex items-center gap-1.5"
+          >
+            <span>{trimmed.replace(/^#+\s*/, '')}</span>
+          </h4>
+        );
+      }
+      if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+        const items = trimmed.split('\n');
+        return (
+          <ul key={idx} className="space-y-1.5 pl-4 list-disc text-stone-300 text-xs marker:text-amber-400">
+            {items.map((item, i) => (
+              <li key={i}>{item.replace(/^[-*]\s*/, '')}</li>
+            ))}
+          </ul>
+        );
+      }
+      return (
+        <p key={idx} className="text-stone-300 text-xs leading-relaxed">
+          {trimmed}
+        </p>
+      );
+    });
+  };
+
+  // Save to journal & sync to Google Sheets
   const handleSaveReading = async () => {
     if (!selectedCard) return;
 
     const newReading: DailyReading = {
+      id: lastSavedReading?.id || ('reading_' + Date.now()),
+      date: new Date().toISOString().slice(0, 10),
+      timestamp: Date.now(),
+      cardId: selectedCard.id,
+      cardName: selectedCard.name,
+      cardNameEn: selectedCard.nameEn,
+      orientation,
+      question,
+      intuitionNotes,
+      reflectionNotes,
+      actionAdvice: actionAdvice || selectedCard.advice,
+      moodScore,
+      tags: selectedTags,
+      drawMode,
+      photoUrl: physicalPhoto || undefined,
+      driveFileUrl: driveFileUrl || undefined,
+      aiAnalysis: aiAnalysis || undefined,
+      aiSources: aiSources.length > 0 ? aiSources : undefined,
+    };
+
+    // 1. Save locally first
+    saveDailyReading(newReading);
+    setLastSavedReading(newReading);
+    setIsSaved(true);
+    if (onReadingSaved) onReadingSaved();
+
+    // 2. Active synchronization to Google Sheets
+    setIsSyncingToSheets(true);
+    setSyncError(null);
+    setSheetsSyncStatus('正在同步寫入 Google 試算表...');
+
+    try {
+      const syncRes = await syncDailyReadingDirect(newReading);
+      if (syncRes.success) {
+        if (syncRes.driveUrl) {
+          setDriveFileUrl(syncRes.driveUrl);
+          newReading.driveFileUrl = syncRes.driveUrl;
+          saveDailyReading(newReading);
+        }
+        if (syncRes.sheetUrl) {
+          setSpreadsheetUrl(syncRes.sheetUrl);
+        }
+        setSheetsSyncStatus(syncRes.message || '已成功同步寫入 Google 試算表 ✓');
+        sounds.playRevealChime();
+      } else {
+        setSyncError(syncRes.message);
+        if (syncRes.message.includes('尚未連接') || syncRes.message.includes('未設定')) {
+          setSheetsSyncStatus('已先保存至本機！請連接 Google 帳號以自動同步至試算表。');
+          setIsSheetsModalOpen(true);
+        } else {
+          setSheetsSyncStatus(`本地已保存，但試算表同步失敗：${syncRes.message}`);
+        }
+      }
+    } catch (err: any) {
+      setSyncError(err?.message || '同步異常');
+      setSheetsSyncStatus(`本地已保存，但同步異常：${err?.message}`);
+    } finally {
+      setIsSyncingToSheets(false);
+    }
+  };
+
+  const handleQuickGoogleConnectAndSync = async () => {
+    try {
+      setIsSyncingToSheets(true);
+      const res = await googleSignIn();
+      if (res) {
+        setGoogleUser(res.user);
+        setHasSheetsUrl(true);
+        setSheetsSyncStatus('已成功連接 Google 帳號！正在同步本次抽牌紀錄...');
+        if (selectedCard) {
+          const targetReading = lastSavedReading || {
+            id: 'reading_' + Date.now(),
+            date: new Date().toISOString().slice(0, 10),
+            timestamp: Date.now(),
+            cardId: selectedCard.id,
+            cardName: selectedCard.name,
+            cardNameEn: selectedCard.nameEn,
+            orientation,
+            question,
+            intuitionNotes,
+            reflectionNotes,
+            actionAdvice: actionAdvice || selectedCard.advice,
+            moodScore,
+            tags: selectedTags,
+            drawMode,
+            photoUrl: physicalPhoto || undefined,
+            aiAnalysis: aiAnalysis || undefined,
+            aiSources: aiSources.length > 0 ? aiSources : undefined,
+          };
+          saveDailyReading(targetReading);
+          const syncRes = await syncDailyReadingDirect(targetReading);
+          if (syncRes.success) {
+            setSheetsSyncStatus(syncRes.message);
+            if (syncRes.sheetUrl) setSpreadsheetUrl(syncRes.sheetUrl);
+            sounds.playRevealChime();
+          } else {
+            setSheetsSyncStatus(`同步失敗：${syncRes.message}`);
+          }
+        }
+      }
+    } catch (err: any) {
+      setSheetsSyncStatus(`連線取消或失敗：${err?.message}`);
+    } finally {
+      setIsSyncingToSheets(false);
+    }
+  };
+
+  // Inline Google Sheets URL save & immediate sync
+  const handleSaveInlineSheetsUrl = async () => {
+    const cleanUrl = inlineSheetsUrl.trim();
+    if (!cleanUrl) {
+      alert('請先貼上 Google Apps Script 網頁應用程式 URL 網址');
+      return;
+    }
+    setGoogleSheetsUrl(cleanUrl);
+    setHasSheetsUrl(true);
+    setSheetsSyncStatus('已儲存網址，正在立即同步本次抽牌紀錄至 Google 試算表...');
+
+    if (selectedCard) {
+      const targetReading: DailyReading = lastSavedReading || {
+        id: 'reading_' + Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+        timestamp: Date.now(),
+        cardId: selectedCard.id,
+        cardName: selectedCard.name,
+        cardNameEn: selectedCard.nameEn,
+        orientation,
+        question,
+        intuitionNotes,
+        reflectionNotes,
+        actionAdvice: actionAdvice || selectedCard.advice,
+        moodScore,
+        tags: selectedTags,
+        drawMode,
+        photoUrl: physicalPhoto || undefined,
+        driveFileUrl: driveFileUrl || undefined,
+        aiAnalysis: aiAnalysis || undefined,
+        aiSources: aiSources.length > 0 ? aiSources : undefined,
+      };
+
+      saveDailyReading(targetReading);
+      setLastSavedReading(targetReading);
+      setIsSaved(true);
+      if (onReadingSaved) onReadingSaved();
+
+      setIsSyncingToSheets(true);
+      setSyncError(null);
+      try {
+        const syncRes = await syncReadingToGoogleSheets(targetReading, cleanUrl);
+        if (syncRes.success) {
+          if (syncRes.driveUrl) {
+            setDriveFileUrl(syncRes.driveUrl);
+            targetReading.driveFileUrl = syncRes.driveUrl;
+            saveDailyReading(targetReading);
+          }
+          setSheetsSyncStatus(syncRes.message || '已成功同步寫入 Google 試算表 ✓');
+          sounds.playRevealChime();
+        } else {
+          setSyncError(syncRes.message);
+          setSheetsSyncStatus(`同步失敗：${syncRes.message}`);
+        }
+      } catch (err: any) {
+        setSyncError(err?.message);
+        setSheetsSyncStatus(`連線異常：${err?.message}`);
+      } finally {
+        setIsSyncingToSheets(false);
+      }
+    }
+  };
+
+  // Re-sync current reading manually
+  const handleManualSyncToSheets = async () => {
+    if (!selectedCard) return;
+
+    const targetReading: DailyReading = lastSavedReading || {
       id: 'reading_' + Date.now(),
       date: new Date().toISOString().slice(0, 10),
       timestamp: Date.now(),
@@ -254,27 +558,40 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
       drawMode,
       photoUrl: physicalPhoto || undefined,
       driveFileUrl: driveFileUrl || undefined,
+      aiAnalysis: aiAnalysis || undefined,
+      aiSources: aiSources.length > 0 ? aiSources : undefined,
     };
 
-    saveDailyReading(newReading);
-    setIsSaved(true);
-    if (onReadingSaved) onReadingSaved();
+    setIsSyncingToSheets(true);
+    setSyncError(null);
+    setSheetsSyncStatus('正在同步寫入 Google 試算表...');
 
-    // Check if Google Sheets URL is configured and auto-sync
-    const sheetsUrl = getGoogleSheetsUrl();
-    if (sheetsUrl) {
-      setSheetsSyncStatus('正在同步寫入 Google 試算表與雲端硬碟...');
-      const syncRes = await syncReadingToGoogleSheets(newReading);
+    try {
+      const syncRes = await syncDailyReadingDirect(targetReading);
       if (syncRes.success) {
         if (syncRes.driveUrl) {
           setDriveFileUrl(syncRes.driveUrl);
-          newReading.driveFileUrl = syncRes.driveUrl;
-          saveDailyReading(newReading);
+          targetReading.driveFileUrl = syncRes.driveUrl;
         }
-        setSheetsSyncStatus(syncRes.message || '已同步寫入 Google 試算表 ✓');
+        if (syncRes.sheetUrl) {
+          setSpreadsheetUrl(syncRes.sheetUrl);
+        }
+        saveDailyReading(targetReading);
+        setIsSaved(true);
+        setSheetsSyncStatus(syncRes.message || '已成功寫入 Google 試算表 ✓');
+        sounds.playRevealChime();
       } else {
-        setSheetsSyncStatus(`本地已保存（試算表提示：${syncRes.message}）`);
+        setSyncError(syncRes.message);
+        setSheetsSyncStatus(`同步失敗：${syncRes.message}`);
+        if (syncRes.message.includes('尚未連接') || syncRes.message.includes('未設定')) {
+          setIsSheetsModalOpen(true);
+        }
       }
+    } catch (e: any) {
+      setSyncError(e?.message);
+      setSheetsSyncStatus(`連線異常：${e?.message}`);
+    } finally {
+      setIsSyncingToSheets(false);
     }
   };
 
@@ -289,6 +606,9 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
     setIntuitionNotes('');
     setReflectionNotes('');
     setActionAdvice('');
+    setAiAnalysis('');
+    setAiSources([]);
+    setAiError(null);
   };
 
   return (
@@ -361,23 +681,51 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
             </div>
           </div>
 
-          {/* Question Prompt Input */}
-          <div className="max-w-xl mx-auto space-y-3 text-center">
-            <label className="block text-xs font-serif text-amber-300 tracking-wider">
-              ✦ 沉思提問 ✦
-            </label>
-            <input
-              type="text"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              placeholder="請輸入你今天想探索的主題或問題..."
-              className="w-full px-4 py-2.5 rounded-xl bg-stone-950/80 border border-stone-700 focus:border-amber-400 focus:outline-none text-stone-100 text-xs text-center font-serif placeholder:text-stone-500"
-            />
-            <p className="text-[11px] text-stone-400">
-              {drawMode === 'virtual' 
-                ? '提示：開放式問題（如「今天我該關注什麼？」）比封閉式是非題能帶來更多啟發。'
-                : '請先在現實中洗牌並抽出一張實體牌，然後拍照記錄到下方。'}
-            </p>
+          {/* Question Prompt Input - Drives AI Customized Interpretation */}
+          <div className="max-w-2xl mx-auto space-y-3.5 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <label className="block text-xs font-serif font-bold text-amber-200 tracking-wider">
+                ✦ 設定您的占卜提問（AI 偉特客製化牌意解讀核心依據）✦
+              </label>
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="請在此輸入您今天想深入探索的主題或具體提問（如：工作突破、感情發展、重要抉擇）..."
+                className="w-full px-4 py-3 rounded-xl bg-stone-950/90 border border-amber-500/40 focus:border-amber-400 focus:outline-none text-stone-100 text-xs sm:text-sm text-center font-serif placeholder:text-stone-500 shadow-inner transition-colors"
+              />
+            </div>
+
+            {/* Quick Inspiration Presets */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
+              <span className="text-[11px] text-stone-400">快速帶入提問：</span>
+              {QUESTION_PRESETS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setQuestion(preset)}
+                  className={`px-2.5 py-1 text-[11px] rounded-lg transition-all border ${
+                    question === preset
+                      ? 'bg-amber-500/25 text-amber-300 border-amber-500/50 font-semibold shadow-sm'
+                      : 'bg-stone-900/80 text-stone-400 border-stone-800 hover:text-stone-200 hover:border-stone-700'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            {/* Workflow Guidance Card */}
+            <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-300/90 leading-relaxed text-left flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <span>
+                <strong>專屬客製化解讀流程</strong>：在一開始設定好您的提問後 ➔ 進行抽牌 ➔ 先寫下您的<strong>第一直覺與個人解讀</strong> ➔ 隨後啟動 <strong>AI 智慧助教自動連線 Google 檢索最新偉特經典文獻</strong>，為您深入講解牌意並針對提問量身客製化剖析！
+              </span>
+            </div>
           </div>
 
           {/* MODE 1: Virtual Card Deck Felt Table */}
@@ -839,55 +1187,207 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Daily Journaling Form */}
+          {/* Right Column: Daily Journaling Form & AI Customized Analysis */}
           <div className="lg:col-span-7 space-y-6">
             <div className="rounded-2xl border border-stone-800 bg-stone-900/60 p-6 md:p-8 space-y-6 shadow-xl">
-              <div className="flex items-center justify-between pb-3 border-b border-stone-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-stone-800 gap-2">
                 <div className="flex items-center gap-2">
                   <PenTool className="w-4 h-4 text-amber-400" />
                   <h3 className="font-serif font-bold text-amber-100 text-base">
-                    今日研習筆記與心得感悟
+                    今日研習筆記與客製化解析
                   </h3>
                 </div>
-                <div className="text-xs text-stone-400">
-                  問題：「{question}」
+                <div className="text-xs text-amber-300 font-serif bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 max-w-md truncate">
+                  🎯 占卜提問：「{question}」
                 </div>
               </div>
 
-              {/* Input 1: Intuition Impression */}
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-amber-300 flex items-center gap-1.5">
-                  <span>1. 我的第一直覺感悟 (First Intuition)</span>
-                  <span className="text-stone-400 text-[11px] font-normal">· 第一眼看到這張牌時有什麼直觀感受？</span>
-                </label>
+              {/* STEP 1: User's First Intuition & Personal Interpretation */}
+              <div className="space-y-2.5 p-4 rounded-xl bg-stone-950/70 border border-amber-500/20">
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <label className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                    <span>步驟一：請先寫下你的第一直覺與個人解讀</span>
+                  </label>
+                  <span className="text-[11px] text-stone-400">
+                    第一眼看到這張牌有何感受？對你的提問有何聯想？
+                  </span>
+                </div>
                 <textarea
                   value={intuitionNotes}
                   onChange={(e) => setIntuitionNotes(e.target.value)}
-                  rows={2}
-                  placeholder="例如：看到牌中的陽光感覺心情明朗、或是注意到背景那座險峻的山峰讓我有種需要跨越的緊繃感..."
-                  className="w-full p-3 rounded-xl bg-stone-950/70 border border-stone-800 focus:border-amber-400/60 focus:outline-none text-stone-200 text-xs leading-relaxed placeholder:text-stone-600"
+                  rows={3}
+                  placeholder="例如：第一眼看到牌面的人物專注神情，感覺自己對這個問題其實已經具備了某種資源；但同時注意到逆位的角度，是否在提醒我不要太過急躁或只沉溺於想像，需要先穩住心態..."
+                  className="w-full p-3 rounded-lg bg-stone-900/90 border border-stone-700 focus:border-amber-400 focus:outline-none text-stone-100 text-xs leading-relaxed placeholder:text-stone-500"
                 />
+                <div className="text-[11px] text-stone-400 flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>建議先隨心寫下 1~2 句直覺感受，隨後 AI 助教將能為您進行更深刻精準的對照與盲點點評！</span>
+                </div>
               </div>
 
-              {/* Input 2: Life Reflection */}
+              {/* STEP 2: AI Web-Search Rider-Waite Grounded Interpretation (Customized for Question & Intuition) */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    步驟二：AI 智慧解牌（Google 網路檢索偉特文獻，客製化分析提問）
+                  </span>
+                  {aiAnalysis && (
+                    <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      已為提問生成專屬客製化解析
+                    </span>
+                  )}
+                </div>
+
+                {/* Pre-trigger CTA Banner */}
+                {!aiAnalysis && !isAiInterpreting && (
+                  <div className="p-4 rounded-xl border border-dashed border-amber-500/40 bg-gradient-to-br from-amber-500/10 via-stone-950/80 to-stone-900 p-5 flex flex-col items-center justify-center text-center space-y-3">
+                    <p className="text-xs text-stone-300 max-w-lg leading-relaxed">
+                      AI 將自動啟用 Google 搜尋檢索經典偉特塔羅牌典與最新文獻，
+                      並深度對焦您的<strong>「提問：{question}」</strong>與<strong>「個人直覺解讀」</strong>，
+                      為您進行量身定制的牌意解構、圖像密碼印證與提問分析！
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleTriggerAiInterpretation}
+                      className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-serif font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2 group cursor-pointer"
+                    >
+                      <Search className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      ✦ 啟動 AI 檢索網路偉特牌意，並為我客製化剖析提問
+                    </button>
+                  </div>
+                )}
+
+                {/* Loading State */}
+                {isAiInterpreting && (
+                  <div className="p-6 rounded-xl border border-amber-500/40 bg-stone-950/80 flex flex-col items-center justify-center text-center space-y-3 animate-pulse">
+                    <div className="relative w-10 h-10">
+                      <div className="absolute inset-0 rounded-full border-2 border-amber-500/20 border-t-amber-400 animate-spin" />
+                      <Sparkles className="w-4 h-4 text-amber-400 absolute inset-0 m-auto" />
+                    </div>
+                    <div className="text-xs font-serif text-amber-200 font-semibold">
+                      正在透過 Google 搜尋檢索《{selectedCard.name}》經典偉特象徵與多派別文獻...
+                    </div>
+                    <div className="text-[11px] text-stone-400">
+                      正在針對提問「{question}」與您的個人直覺進行高度客製化解讀
+                    </div>
+                  </div>
+                )}
+
+                {/* Error Banner */}
+                {aiError && (
+                  <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs space-y-2">
+                    <div className="font-semibold">AI 解析遇到狀況：</div>
+                    <p className="text-[11px] text-rose-300/90">{aiError}</p>
+                    <button
+                      type="button"
+                      onClick={handleTriggerAiInterpretation}
+                      className="px-3 py-1 bg-rose-700 hover:bg-rose-600 text-white rounded text-[11px] transition-colors"
+                    >
+                      再次嘗試
+                    </button>
+                  </div>
+                )}
+
+                {/* Rendered AI Analysis Panel */}
+                {aiAnalysis && !isAiInterpreting && (
+                  <div className="rounded-xl border border-amber-500/40 bg-stone-950/90 p-5 space-y-4 shadow-xl">
+                    {/* Header Toolbar */}
+                    <div className="flex items-center justify-between pb-3 border-b border-stone-800 gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                        <div>
+                          <div className="font-serif font-bold text-amber-200 text-xs sm:text-sm">
+                            ✦ 偉特深度客製化牌意與提問剖析
+                          </div>
+                          <div className="text-[10px] text-stone-400 font-sans">
+                            已整合正統偉特圖像密碼、網路搜尋文獻與您的個人直覺
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={handleCopyAiAnalysis}
+                          className="px-2.5 py-1 text-[11px] rounded bg-stone-900 hover:bg-stone-800 text-stone-300 border border-stone-700 flex items-center gap-1 transition-colors"
+                          title="複製完整的 AI 客製化分析"
+                        >
+                          {copiedAi ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          {copiedAi ? '已複製' : '複製解析'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleApplyAiToJournal}
+                          className="px-2.5 py-1 text-[11px] rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 flex items-center gap-1 transition-colors"
+                          title="將 AI 牌意精要帶入下方生活反思欄位"
+                        >
+                          <BookMarked className="w-3 h-3" />
+                          帶入反思筆記
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleTriggerAiInterpretation}
+                          className="p-1 text-stone-400 hover:text-amber-300 rounded hover:bg-stone-800 transition-colors"
+                          title="重新檢索分析"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Formatted Content */}
+                    <div className="space-y-3.5 text-xs leading-relaxed text-stone-200 max-h-[28rem] overflow-y-auto pr-1">
+                      {renderAiContent(aiAnalysis)}
+                    </div>
+
+                    {/* Sources Grounding List */}
+                    {aiSources.length > 0 && (
+                      <div className="pt-3 border-t border-stone-800/80">
+                        <div className="text-[11px] font-semibold text-amber-400/90 mb-1.5 flex items-center gap-1">
+                          <BookOpen className="w-3 h-3" />
+                          Google 搜尋網路參考資料與文獻來源：
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {aiSources.map((s, i) => (
+                            <a
+                              key={i}
+                              href={s.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[10px] text-sky-400 hover:text-sky-300 bg-stone-900 px-2 py-0.5 rounded border border-stone-800 hover:border-sky-500/40 flex items-center gap-1 transition-colors max-w-xs truncate"
+                            >
+                              <span className="truncate">{s.title}</span>
+                              <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 3: Life Reflection */}
               <div className="space-y-2">
                 <label className="block text-xs font-medium text-amber-300 flex items-center gap-1.5">
-                  <span>2. 牌義對照與今日生活反思 (Daily Reflection)</span>
+                  <span>步驟三：牌意對照與今日生活反思 (Daily Reflection)</span>
                   <span className="text-stone-400 text-[11px] font-normal">· 這張牌如何對應到我今天的人際、工作或心態？</span>
                 </label>
                 <textarea
                   value={reflectionNotes}
                   onChange={(e) => setReflectionNotes(e.target.value)}
                   rows={4}
-                  placeholder="詳細記錄今日發生的事件、內在情緒波動，以及牌義給你的深刻啟迪與自省..."
+                  placeholder="詳細記錄今日發生的事件、內在情緒波動，以及對照上述牌意後給你的深刻啟迪與自省..."
                   className="w-full p-3 rounded-xl bg-stone-950/70 border border-stone-800 focus:border-amber-400/60 focus:outline-none text-stone-200 text-xs leading-relaxed placeholder:text-stone-600"
                 />
               </div>
 
-              {/* Input 3: Actionable Advice */}
+              {/* STEP 4: Actionable Advice */}
               <div className="space-y-2">
                 <label className="block text-xs font-medium text-amber-300 flex items-center gap-1.5">
-                  <span>3. 今日行動指南 (Actionable Advice)</span>
+                  <span>步驟四：今日行動指南 (Actionable Advice)</span>
                   <span className="text-stone-400 text-[11px] font-normal">· 今天我能採取的一項具體行動</span>
                 </label>
                 <input
@@ -984,22 +1484,49 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
 
               {/* Save Button & Google Sheets indicator */}
               <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-stone-800">
-                <div className="flex flex-col gap-1 text-xs text-stone-400">
+                <div className="flex flex-col gap-1.5 text-xs text-stone-400">
                   <span>
-                    {isSaved ? '已保存至學習日記庫與統計儀表板' : '點擊儲存，建立長期的塔羅研習軌跡'}
+                    {isSaved ? '已保存至學習日記庫，隨時可回顧複習' : '點擊儲存，建立長期的塔羅研習軌跡'}
                   </span>
                   
                   {/* Google Sheets & Drive Sync Indicator */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    {hasSheetsUrl ? (
-                      <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                    {googleUser ? (
+                      <span className="text-[11px] text-emerald-400 flex items-center gap-1.5 font-medium">
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        Google 試算表已連線 ({googleUser.displayName || googleUser.email})
+                      </span>
+                    ) : hasSheetsUrl ? (
+                      <span className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
                         <Check className="w-3 h-3" />
-                        Google 試算表與雲端硬碟已連線
+                        Google 試算表 Webhook 已連線
                       </span>
                     ) : (
-                      <span className="text-[11px] text-stone-500">
-                        未設定雲端硬碟與試算表同步
-                      </span>
+                      <button
+                        type="button"
+                        onClick={handleQuickGoogleConnectAndSync}
+                        className="text-[11px] px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 transition-colors"
+                      >
+                        <svg className="w-3 h-3" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
+                          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                        </svg>
+                        一鍵連接 Google 試算表
+                      </button>
+                    )}
+
+                    {spreadsheetUrl && (
+                      <a
+                        href={spreadsheetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-emerald-400 hover:text-emerald-300 underline flex items-center gap-1 font-mono"
+                      >
+                        開啟我的試算表
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
                     )}
 
                     <button
@@ -1008,12 +1535,12 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
                       className="text-[11px] text-amber-400 hover:text-amber-300 underline flex items-center gap-1"
                     >
                       <FileSpreadsheet className="w-3 h-3" />
-                      {hasSheetsUrl ? '查看/修改網址' : '填入 Google Sheets & 雲端硬碟網址'}
+                      {googleUser || hasSheetsUrl ? '管理試算表設定' : '設定試算表'}
                     </button>
                   </div>
 
                   {sheetsSyncStatus && (
-                    <div className="text-[11px] text-amber-300 font-medium">
+                    <div className="text-[11px] text-amber-300 font-medium flex items-center gap-1">
                       ✦ {sheetsSyncStatus}
                     </div>
                   )}
@@ -1046,17 +1573,24 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
                   <button
                     type="button"
                     onClick={handleSaveReading}
-                    disabled={isSaved}
+                    disabled={isSyncingToSheets}
                     className={`px-6 py-2.5 rounded-xl font-serif font-semibold text-xs transition-all flex items-center gap-2 shadow-lg ${
-                      isSaved
-                        ? 'bg-emerald-600 text-white cursor-default'
+                      isSyncingToSheets
+                        ? 'bg-amber-600/80 text-white cursor-wait'
+                        : isSaved
+                        ? 'bg-emerald-700 hover:bg-emerald-600 text-white'
                         : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 shadow-amber-500/20'
                     }`}
                   >
-                    {isSaved ? (
+                    {isSyncingToSheets ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-amber-200" />
+                        正在寫入 Google 試算表...
+                      </>
+                    ) : isSaved ? (
                       <>
                         <Check className="w-4 h-4" />
-                        已儲存今日心得！
+                        已儲存（點擊重新同步試算表）
                       </>
                     ) : (
                       <>
@@ -1087,6 +1621,7 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
           card={selectedCard}
           orientation={orientation}
           question={question}
+          userInterpretation={intuitionNotes}
           onApplyToJournal={(text) => {
             setReflectionNotes((prev) =>
               prev ? `${prev}\n\n【網路牌意研習摘要】：\n${text.slice(0, 500)}...` : `【網路牌意研習摘要】：\n${text}`

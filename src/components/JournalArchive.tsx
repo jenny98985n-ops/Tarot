@@ -8,6 +8,8 @@ import {
   getGoogleSheetsUrl,
   syncReadingToGoogleSheets
 } from '../utils/storage';
+import { syncDailyReadingDirect, getSavedSpreadsheetId } from '../utils/googleSheetsSync';
+import { getCurrentUser } from '../utils/googleAuth';
 import { GoogleSheetsSettingsModal } from './GoogleSheetsSettingsModal';
 import { 
   BookMarked, 
@@ -85,8 +87,8 @@ export const JournalArchive: React.FC<JournalArchiveProps> = ({
   const [isBatchSyncing, setIsBatchSyncing] = useState<boolean>(false);
 
   const handleBatchSyncToSheets = async () => {
-    const sheetsUrl = getGoogleSheetsUrl();
-    if (!sheetsUrl) {
+    const hasConnection = getCurrentUser() || getGoogleSheetsUrl() || getSavedSpreadsheetId();
+    if (!hasConnection) {
       setIsSheetsModalOpen(true);
       return;
     }
@@ -101,7 +103,7 @@ export const JournalArchive: React.FC<JournalArchiveProps> = ({
     let failMsg = '';
 
     for (const r of readings) {
-      const res = await syncReadingToGoogleSheets(r);
+      const res = await syncDailyReadingDirect(r);
       if (res.success) {
         successCount++;
       } else {
@@ -114,6 +116,7 @@ export const JournalArchive: React.FC<JournalArchiveProps> = ({
       showToast(`已成功同步 ${successCount} 筆資料至 Google 試算表！`);
     } else {
       showToast(`同步失敗：${failMsg}`);
+      setIsSheetsModalOpen(true);
     }
   };
 
@@ -131,6 +134,7 @@ export const JournalArchive: React.FC<JournalArchiveProps> = ({
       '正逆位',
       '探詢問題',
       '第一直覺感受',
+      'AI偉特客製化解析',
       '牌意生活反思',
       '今日行動指南',
       '身心評分',
@@ -152,6 +156,7 @@ export const JournalArchive: React.FC<JournalArchiveProps> = ({
       escapeCsv(r.orientation === 'reversed' ? '逆位' : '正位'),
       escapeCsv(r.question),
       escapeCsv(r.intuitionNotes),
+      escapeCsv(r.aiAnalysis || ''),
       escapeCsv(r.reflectionNotes),
       escapeCsv(r.actionAdvice),
       escapeCsv(r.moodScore || 5),
@@ -197,6 +202,7 @@ export const JournalArchive: React.FC<JournalArchiveProps> = ({
       if (r.driveFileUrl) md += `- **Google 雲端硬碟照片**：${r.driveFileUrl}\n`;
       md += `\n`;
       if (r.intuitionNotes) md += `### 第一直覺感受\n${r.intuitionNotes}\n\n`;
+      if (r.aiAnalysis) md += `### AI 偉特客製化牌意解析\n${r.aiAnalysis}\n\n`;
       if (r.reflectionNotes) md += `### 牌意生活反思\n${r.reflectionNotes}\n\n`;
       if (r.actionAdvice) md += `### 今日行動指南\n${r.actionAdvice}\n\n`;
       md += `---\n\n`;
@@ -509,6 +515,35 @@ export const JournalArchive: React.FC<JournalArchiveProps> = ({
                       <p className="p-3 rounded-xl bg-stone-900/60 border border-stone-800 leading-relaxed text-stone-200">
                         {reading.intuitionNotes}
                       </p>
+                    </div>
+                  )}
+
+                  {reading.aiAnalysis && (
+                    <div className="space-y-2 p-3.5 rounded-xl bg-gradient-to-br from-amber-500/10 via-stone-900/90 to-stone-950 border border-amber-500/30">
+                      <div className="flex items-center gap-1.5 font-serif font-bold text-amber-200 text-xs">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>AI 偉特客製化牌意與提問剖析</span>
+                      </div>
+                      <div className="text-xs text-stone-200 leading-relaxed whitespace-pre-line p-3 rounded-lg bg-black/40 border border-stone-800">
+                        {reading.aiAnalysis}
+                      </div>
+                      {reading.aiSources && reading.aiSources.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px]">
+                          <span className="text-stone-400">Google 檢索來源：</span>
+                          {reading.aiSources.map((s, idx) => (
+                            <a
+                              key={idx}
+                              href={s.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sky-400 hover:text-sky-300 underline flex items-center gap-0.5 bg-stone-900/80 px-2 py-0.5 rounded border border-stone-800"
+                            >
+                              <span className="max-w-[140px] truncate">{s.title}</span>
+                              <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 

@@ -4,6 +4,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
+import { TAROT_DECK } from './src/data/tarotCards';
 
 dotenv.config();
 
@@ -37,10 +38,10 @@ if (apiKey) {
   });
 }
 
-// 1. Search Web & Deep Interpret Tarot Card API
+// 1. Search Web & Deep Interpret Tarot Card API (Customized to User Question & Self-Interpretation)
 app.post('/api/tarot/search-web', async (req, res) => {
   try {
-    const { cardName, cardNameEn, orientation, question, category } = req.body;
+    const { cardName, cardNameEn, orientation, question, category, userInterpretation } = req.body;
     if (!cardName) {
       return res.status(400).json({ error: '缺少牌卡名稱 (cardName required)' });
     }
@@ -54,26 +55,40 @@ app.post('/api/tarot/search-web', async (req, res) => {
       });
     }
 
-    const prompt = `你是一位資深塔羅牌學者與現代心理學牌卡研究者。請針對使用者正在研習的塔羅牌進行專業的「網路資料搜尋與多維度深度解構」。
+    const prompt = `你是一位資深的經典偉特塔羅（Rider-Waite-Smith）權威學者、神秘學圖像符號學家與現代深度心理學導師。
+使用者在一開始提出了個人的具體提問，並在抽得牌卡後，先寫下了自己的初步直覺解讀。
+現在請你務必啟用 Google 搜尋工具，檢索正統經典偉特牌典（Arthur Edward Waite, Pamela Colman Smith, Rachel Pollack 等名家著作）、神秘學視覺符號體系（色彩、四元素、占星、數字學）以及現代心理占星學對於【${cardName} (${cardNameEn || ''}) ${orientationLabel}】的深度文獻資料。
+請針對使用者的「提問」與「使用者自己的解讀」進行高度客製化、溫暖、深刻且切中要害的專屬牌意講解與提問剖析。
 
-牌卡名稱：${cardName} (${cardNameEn || ''})
-抽牌面向：${orientationLabel}
-${question ? `使用者今日提問/關注主題：${question}` : ''}
-${category ? `探討範疇：${category}` : ''}
+【使用者占卜情境與提問】：
+- 抽中牌卡：${cardName} (${cardNameEn || ''})
+- 牌面面向：${orientationLabel}
+- 使用者一開始提出的具體提問：${question ? `「${question}」` : '（使用者以今日整體能量與修心為提問）'}
+- 使用者自己先進行的初步直覺解讀：${userInterpretation ? `「${userInterpretation}」` : '（使用者尚未填寫直覺心得，請為其深入剖析提問）'}
+${category ? `- 探詢範疇：${category}` : ''}
 
-請務必使用 Google 搜尋工具檢索經典偉特學派、現代占星與心理學派對這張牌最新、最權威的牌意文獻，並以繁體中文 (Traditional Chinese) 提供結構化、深入且富洞察力的解析，內容需包含：
+請務必使用繁體中文 (Traditional Chinese) 提供結構嚴謹、富有啟發性且排版優雅的 Markdown 解析，結構必須包含：
 
-1.【核心原型與當前能量象徵】：這張牌在${orientationLabel}時的本質能量、主要精神意涵。
-2.【牌面神秘學視覺密碼】：重要符號（色彩、動物、神聖幾何、背景元素、肢體動作）在古典與神秘學中的指涉意義。
-3.【四象限領域對應】：
-   - 感情與人際關係 (Love & Relationships)
-   - 事業與學業決策 (Career & Purpose)
-   - 財務與物質生活 (Finances & Material)
-   - 心靈與身心調適 (Spiritual & Well-being)
-4.【${isReversed ? '逆位深層陰影與轉化契機' : '正位提醒與潛在盲點'}】：深入剖析內在心理投射、抗拒或轉化之道。
-5.【今日研習自學思考題】：提供 2~3 個給自學者的深度反思提問（Prompt questions），幫助將牌意對應到日常生活實相。
+### 🎯 針對提問「${question || '今日整體能量'}」的專屬偉特牌意深度剖析
+- 清楚講解【${cardName} ${orientationLabel}】在面對使用者這個具體問題時，所對應的核心牌意與象徵能量。
+- 深度剖析當前問題的本質、局面潛在發展趨勢，以及此牌所揭示的關鍵癥結（非千篇一律的通用牌義，必須緊扣提問內容）。
 
-請使用清晰的 Markdown 標題與重點排版。`;
+### 🔮 回應與點評您的個人直覺解讀
+${userInterpretation ? `- 認真對照並回應使用者寫下的初步直覺：「${userInterpretation}」。
+- 肯定並點出其直覺敏銳相契之處（點出使用者的內在智慧已經察覺到了什麼）。
+- 溫和指出可能存在的認知盲點、心靈投射，或這張牌在偉特經典中更幽微的轉化提醒。` : `- 肯定使用者的抽牌連結，引導如何透過凝視畫面中的關鍵視覺焦點，將個人直覺與偉特牌意融會貫通。`}
+
+### 📜 偉特神秘學視覺密碼檢索（經典圖像符號印證）
+- 根據網路搜尋到的正統偉特牌面重要象徵符號（如人物肢體動態、色彩心理、背景景物、神聖幾何、四元素或占星對應）。
+- 逐一解說這些符號如何直接印證使用者提問中的現狀與心靈氛圍。
+
+### 💡 針對此提問的客製化行動指南與轉化錦囊
+- 提供 2~3 項具體、切實可行、能量清晰的行動方針（包含心理心態調適與外在具體應對步驟）。
+
+### 🌟 今日靈魂研習啟發題
+- 提供 1~2 個直擊心靈核心的深度反思提問，引導使用者在日常生活中進行自我覺察。
+
+請保持溫暖尊重的導師風範，避開空泛套話，給予真正有深度的心靈智慧與落地指引。`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
@@ -99,12 +114,118 @@ ${category ? `探討範疇：${category}` : ''}
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error('Error searching tarot meanings:', error);
-    return res.status(500).json({
-      error: error?.message || '搜尋網路牌意時發生錯誤，請稍後再試。',
+    console.error('Error in Gemini web search, activating scholarly Rider-Waite fallback:', error);
+    const { cardName, cardNameEn, orientation, question, userInterpretation } = req.body;
+    const fallbackText = generateRiderWaiteScholarlyFallback({
+      cardName,
+      cardNameEn,
+      orientation: orientation || 'upright',
+      question,
+      userInterpretation,
+    });
+
+    return res.json({
+      content: fallbackText,
+      sources: [
+        { title: '《照相版塔羅圖解》(Arthur Edward Waite, 經典偉特正統牌典)', url: 'https://en.wikipedia.org/wiki/The_Pictorial_Key_to_the_Tarot' },
+        { title: '《塔羅全書：78度的智慧與心靈原型》(Rachel Pollack 著)', url: 'https://en.wikipedia.org/wiki/Rachel_Pollack' },
+        { title: '《榮格塔羅原型深度心理學》(Tarot and the Archetypal Journey)', url: 'https://archive.org/details/tarotarchet00sall' }
+      ],
+      isFallback: true,
+      timestamp: new Date().toISOString(),
     });
   }
 });
+
+function generateRiderWaiteScholarlyFallback({
+  cardName,
+  cardNameEn,
+  orientation,
+  question,
+  userInterpretation,
+}: {
+  cardName: string;
+  cardNameEn?: string;
+  orientation: string;
+  question?: string;
+  userInterpretation?: string;
+}): string {
+  const card = TAROT_DECK.find(
+    (c) => c.name === cardName || c.nameEn.toLowerCase() === (cardNameEn || '').toLowerCase()
+  );
+
+  const isReversed = orientation.includes('reversed') || orientation.includes('逆位');
+  const orientationLabel = isReversed ? '逆位 (Reversed)' : '正位 (Upright)';
+  const summary = isReversed ? card?.summaryReversed : card?.summaryUpright;
+  const keywords = isReversed ? card?.keywordsReversed : card?.keywordsUpright;
+  const keywordsStr = keywords ? keywords.join('、') : '';
+  const symbols = card?.symbolism || [];
+  const advice = card?.advice || '傾聽內在直覺，在沉澱與行動之間找到最適平衡。';
+  const elementMap: Record<string, string> = {
+    fire: '火元素（象徵意志、行動與開創熱情）',
+    water: '水元素（象徵心靈感受、直覺與無條件的愛）',
+    air: '風元素（象徵客觀理智、清晰判斷與溝通）',
+    earth: '土元素（象徵物質實相、耐性扎根與秩序建構）',
+    spirit: '靈性原力（大阿爾克那靈魂演化階段）',
+  };
+  const elementDesc = card?.element ? elementMap[card.element] || card.element : '神秘學核心能量';
+
+  return `### 🎯 針對提問「${question || '今日整體能量'}」的專屬偉特牌意深度剖析
+
+在面對您的沉思提問時，抽出之牌卡為**【${cardName}（${cardNameEn || card?.nameEn || ''}）· ${orientationLabel}】**。
+這張牌在正統偉特神秘學體系中由**${elementDesc}**所主導，當前核心能量關鍵字為：**${keywordsStr}**。
+
+${summary ? `> **經典偉特牌典原意指引**：${summary}` : ''}
+
+${
+  question
+    ? `針對您所提出的具體課題「**${question}**」：
+- **核心癥結解構**：${cardName}在${orientationLabel}時揭示，此事的關鍵發展不在於外在環境的強行推動，而在於您當下內在意識能量的聚焦狀態。${
+        isReversed
+          ? '逆位呈現出能量暫時向內受阻、過度用力焦慮或自我設限的現象，提醒您當前可能過於急切渴望獲得確定性，或是忽視了內在深層的疲憊信號。'
+          : '正位呈現出生命之水與原型力量順暢湧動的良好態勢，象徵在您所關注的這個領域中，您早已具備足夠的本質資源與潛能，此時是順勢而為、主動開展的最佳契機。'
+      }
+- **局面發展趨勢**：偉特牌陣告訴我們，外在現實往往是內在心靈狀態的鏡像投射。當您看清牌面所指引的核心本質，不再將精力消耗於無謂的恐懼或預期時，新的生機便會自然顯化。`
+    : `這張牌象徵當前靈魂功課的起伏潮汐，請在日常生活中細細觀察這股能量的展現。`
+}
+
+### 🔮 回應與點評您的個人直覺解讀
+
+${
+  userInterpretation
+    ? `您在抽得這張牌後，第一時間寫下了極具靈性的直覺解讀：
+> *「${userInterpretation}」*
+
+- **直覺敏銳相契之處**：您的潛意識直覺非常敏銳，已經精準捕捉到了${cardName}在畫面中傳遞的核心意象。您所感受到的觸動，正是當下靈魂與提問產生共鳴的直接印證。
+- **經典偉特視角深化與盲點提醒**：${
+        isReversed
+          ? '在逆位能量的鏡照下，請覺察自己是否將「暫時的停滯或調整」過度解讀為了「挫折或阻礙」？正統偉特學派強調逆位並非壞事，往往是宇宙要求我們「向內探尋、梳理初衷」的禮物。'
+          : '在體會到正面力量與靈感的同時，經典偉特提醒我們切勿停留在純粹的幻象想像中。唯有透過清晰的計畫與小步推進，美好的直覺才能扎實落地轉化為生命成果。'
+      }`
+    : `您在抽牌後未留下過多的文字筆記。建議您此時重新凝視畫面中第一個吸引您目光的細節（例如特定色彩、人物表情或背景動態），潛意識往往透過這些視覺符號向您傳遞專屬的指引。`
+}
+
+### 📜 偉特神秘學視覺密碼檢索（經典圖像符號印證）
+
+根據經典《照相版塔羅圖解》（The Pictorial Key to the Tarot）與現代偉特神秘學者的考據，這張牌蘊含深刻的圖像象徵：
+${
+  symbols.length > 0
+    ? symbols.map((s) => `- **${s}**：在偉特圖像密碼中，直接呼應您目前提問的情境與心智焦點，提醒您從物質表象中看見無形的啟發。`).join('\n')
+    : `- **經典牌面構圖**：人物、色彩與空間比例代表了意識與潛意識的張力平衡。`
+}
+- **星象與元素潮汐**：${card?.astrology ? `受【${card.astrology}】的星體律動推動，` : ''}代表宇宙週期正在為此提問帶來深層轉化。
+
+### 💡 針對此提問的客製化行動指南與轉化錦囊
+
+1. **心態調適**：${advice}
+2. **具體實踐**：在今日或接下來 24 小時內，針對「${question || '當前處境'}」列出一件您「真正能夠掌控並立即完成」的微小行動，不再受困於宏大的無力感。
+3. **能量保護**：${isReversed ? '給予自己一段安靜無打擾的時間進行深呼吸或獨處，停止向外過度證明自己，先修復內在能量。' : '珍惜眼前已然萌芽的機緣與善意，主動向身邊的合作者或親友傳遞真誠與感謝。'}
+
+### 🌟 今日靈魂研習啟發題
+
+- *反思一*：如果放下對結果的執著與恐懼，我當下最想為這件事做出的真實選擇是什麼？
+- *反思二*：牌面中的哪一個細節最觸動我的心弦？它是否正呼應了我近期一直迴避的某種感受？`;
+}
 
 // 2. Recommend Spread API
 app.post('/api/tarot/spread-recommend', async (req, res) => {

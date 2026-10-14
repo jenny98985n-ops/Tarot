@@ -3,6 +3,7 @@ import { SPREAD_TEMPLATES, TAROT_DECK } from '../data/tarotCards';
 import { SpreadTemplate, SpreadReadingCard, SpreadReadingRecord, Orientation } from '../types/tarot';
 import { TarotCardView } from './TarotCardView';
 import { saveSpreadReading } from '../utils/storage';
+import { syncSpreadReadingDirect } from '../utils/googleSheetsSync';
 import { sounds } from '../utils/audio';
 import { 
   Compass, 
@@ -36,6 +37,7 @@ export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) =
   const [isInterpreting, setIsInterpreting] = useState<boolean>(false);
   const [aiInterpretation, setAiInterpretation] = useState<string>('');
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
+  const [spreadSyncMsg, setSpreadSyncMsg] = useState<string>('');
 
   // Ask AI to recommend spread
   const handleAskSpreadRecommendation = async () => {
@@ -111,7 +113,7 @@ export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) =
   };
 
   // Save spread record
-  const handleSaveSpreadRecord = () => {
+  const handleSaveSpreadRecord = async () => {
     const record: SpreadReadingRecord = {
       id: 'spread_' + Date.now(),
       date: new Date().toISOString().slice(0, 10),
@@ -125,6 +127,15 @@ export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) =
     saveSpreadReading(record);
     setSavedSuccess(true);
     if (onSpreadSaved) onSpreadSaved();
+
+    try {
+      const res = await syncSpreadReadingDirect(record);
+      if (res.success) {
+        setSpreadSyncMsg(res.message);
+      }
+    } catch (e) {
+      console.warn('Spread sync error:', e);
+    }
   };
 
   const handleReset = () => {
@@ -132,6 +143,7 @@ export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) =
     setActiveCards([]);
     setAiInterpretation('');
     setSavedSuccess(false);
+    setSpreadSyncMsg('');
   };
 
   return (
@@ -399,10 +411,17 @@ export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) =
                 </div>
 
                 {/* Save Spread Record */}
-                <div className="flex items-center justify-between pt-3 border-t border-stone-800">
-                  <span className="text-xs text-stone-400">
-                    {savedSuccess ? '已儲存至研習紀錄庫！' : '保存此套牌陣與AI解讀，以便日後回顧複習'}
-                  </span>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-stone-800">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-stone-400">
+                      {savedSuccess ? '已儲存至研習紀錄庫！' : '保存此套牌陣與AI解讀，以便日後回顧複習'}
+                    </span>
+                    {spreadSyncMsg && (
+                      <span className="text-[11px] text-emerald-400 font-medium">
+                        ✦ {spreadSyncMsg}
+                      </span>
+                    )}
+                  </div>
 
                   <button
                     onClick={handleSaveSpreadRecord}

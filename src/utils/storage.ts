@@ -424,6 +424,7 @@ export async function syncReadingToGoogleSheets(
     actionAdvice: reading.actionAdvice || '',
     moodScore: reading.moodScore || 5,
     tags: (reading.tags || []).join(', '),
+    aiAnalysis: reading.aiAnalysis || '',
     hasPhoto: Boolean(imageBase64),
     imageBase64: imageBase64,
     imageMimeType: imageMimeType,

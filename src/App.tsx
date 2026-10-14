@@ -6,6 +6,7 @@ import { TarotDeckEncyclopedia } from './components/TarotDeckEncyclopedia';
 import { JournalArchive } from './components/JournalArchive';
 import { GoogleSheetsSettingsModal } from './components/GoogleSheetsSettingsModal';
 import { CardArtManagerModal } from './components/CardArtManagerModal';
+import { GoogleAccountButton } from './components/GoogleAccountButton';
 import { syncServerCardArts } from './utils/cardArtStorage';
 import { Sparkles, BarChart3, Compass, BookOpen, BookMarked, FileSpreadsheet, Image as ImageIcon } from 'lucide-react';
 
@@ -104,31 +105,33 @@ export default function App() {
             </button>
           </nav>
 
-          {/* Zone 3: Exactly 1 primary action with optional Sheets settings */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => setIsArtModalOpen(true)}
-              className="p-2 text-stone-400 hover:text-amber-300 rounded-lg hover:bg-stone-800/80 transition-colors flex items-center gap-1.5 text-xs"
-              title="管理 78 張牌面圖片庫與 public/cards/ 資料夾"
-            >
-              <ImageIcon className="w-4 h-4 text-amber-400" />
-              <span className="hidden lg:inline text-stone-300">牌面圖片庫</span>
-            </button>
+          {/* Zone 3: Actions with Google account & Sheets settings */}
+          <div className="flex items-center gap-2 shrink-0">
+            <GoogleAccountButton compact />
 
             <button
               onClick={() => setIsSheetsModalOpen(true)}
-              className="p-2 text-stone-400 hover:text-emerald-300 rounded-lg hover:bg-stone-800/80 transition-colors flex items-center gap-1.5 text-xs"
-              title="設定 Google 試算表與雲端硬碟同步網址"
+              className="p-1.5 text-stone-400 hover:text-emerald-300 rounded-lg hover:bg-stone-800/80 transition-colors flex items-center gap-1.5 text-xs"
+              title="設定 Google 試算表與雲端硬碟同步"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-              <span className="hidden lg:inline text-stone-300">試算表與雲端硬碟</span>
+              <span className="hidden xl:inline text-stone-300">試算表</span>
+            </button>
+
+            <button
+              onClick={() => setIsArtModalOpen(true)}
+              className="p-1.5 text-stone-400 hover:text-amber-300 rounded-lg hover:bg-stone-800/80 transition-colors flex items-center gap-1.5 text-xs"
+              title="管理 78 張牌面圖片庫與 public/cards/ 資料夾"
+            >
+              <ImageIcon className="w-4 h-4 text-amber-400" />
+              <span className="hidden xl:inline text-stone-300">牌面庫</span>
             </button>
 
             <button
               onClick={() => setActiveTab('daily')}
-              className="px-4 py-2 text-xs font-serif font-semibold text-stone-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-lg transition-colors shadow-md shadow-amber-500/15 whitespace-nowrap"
+              className="px-3.5 py-1.5 text-xs font-serif font-semibold text-stone-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-lg transition-colors shadow-md shadow-amber-500/15 whitespace-nowrap"
             >
-              抽今日指引牌
+              抽指引牌
             </button>
           </div>
         </div>

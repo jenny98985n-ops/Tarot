@@ -8,6 +8,7 @@ interface WebSearchModalProps {
   card: TarotCard;
   orientation: Orientation;
   question?: string;
+  userInterpretation?: string;
   onApplyToJournal?: (text: string) => void;
 }
 
@@ -17,6 +18,7 @@ export const WebSearchModal: React.FC<WebSearchModalProps> = ({
   card,
   orientation,
   question,
+  userInterpretation,
   onApplyToJournal,
 }) => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -46,6 +48,7 @@ export const WebSearchModal: React.FC<WebSearchModalProps> = ({
           cardNameEn: card.nameEn,
           orientation,
           question,
+          userInterpretation,
           category: card.arcana === 'major' ? '大阿爾克那心靈原型' : `${card.suit}小阿爾克那生活實相`,
         }),
       });
@@ -136,6 +139,24 @@ export const WebSearchModal: React.FC<WebSearchModalProps> = ({
               重新檢索
             </button>
           </div>
+
+          {/* User Question & Intuition Context */}
+          {(question || userInterpretation) && (
+            <div className="p-3.5 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-2 text-xs">
+              {question && (
+                <div className="flex items-start gap-2">
+                  <span className="text-amber-400 font-semibold shrink-0">🎯 您的提問：</span>
+                  <span className="text-stone-100 font-serif font-medium">「{question}」</span>
+                </div>
+              )}
+              {userInterpretation && (
+                <div className="flex items-start gap-2 pt-1 border-t border-amber-500/10">
+                  <span className="text-amber-300 font-medium shrink-0">🔮 您的初步直覺：</span>
+                  <span className="text-stone-300 italic">「{userInterpretation}」</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Loading state */}
           {loading && (
