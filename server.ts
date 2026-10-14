@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import { TAROT_DECK } from './src/data/tarotCards';
 
 dotenv.config();
@@ -429,6 +429,213 @@ app.post('/api/sheets/sync', async (req, res) => {
   }
 });
 
+// 5.5. AI Deep Philosophical Association API (Customized to User's Card Notes & Card Attributes)
+app.post('/api/tarot/philosophical-association', async (req, res) => {
+  try {
+    const {
+      cardId,
+      cardName,
+      cardNameEn,
+      orientation = 'upright',
+      element,
+      astrology,
+      arcana,
+      suit,
+      number,
+      keywords = [],
+      summary = '',
+      symbolism = [],
+      advice = '',
+      userNote = '',
+      drawCount = 0,
+      school = '全方位深度哲學與心靈原型',
+    } = req.body;
+
+    if (!cardName) {
+      return res.status(400).json({ error: '缺少牌卡名稱 (cardName required)' });
+    }
+
+    const isReversed = orientation === 'reversed';
+    const orientationLabel = isReversed ? '逆位 (Reversed)' : '正位 (Upright)';
+
+    if (!ai) {
+      const fallback = generatePhilosophicalFallback({
+        cardId,
+        cardName,
+        cardNameEn,
+        orientation,
+        element,
+        astrology,
+        keywords,
+        symbolism,
+        advice,
+        userNote,
+        school,
+      });
+      return res.json({ ...fallback, isFallback: true });
+    }
+
+    const prompt = `你是一位享譽國際的資深西方神秘學學者、榮格深度心理學導師、形上學哲學教授與正統偉特塔羅（Rider-Waite-Smith）象徵體系大師。
+使用者正在研習塔羅牌典，針對【${cardName} (${cardNameEn || ''})】請求調用 AI 進行一場深度哲學牌義聯想與思維拓展。
+
+【牌卡本體屬性】：
+- 牌卡名稱：${cardName} (${cardNameEn || ''})
+- 牌卡分類：${arcana === 'major' ? `大阿爾克那 #${number ?? ''}` : `${suit || ''} 小阿爾克那`}
+- 觀察視角：${orientationLabel}
+- 核心元素：${element || '未特別標註'}
+- 占星/密契學對應：${astrology || '無特定星宿'}
+- 牌面重要象徵符號：${symbolism.length > 0 ? symbolism.join('、') : '正統偉特圖像密碼'}
+- 核心關鍵詞：${keywords.join('、')}
+- 牌典精華指引：${summary}
+- 當前切入的哲學流派視角：${school}
+- 使用者個人研習歷程：在歷史紀錄中曾抽中過此牌 ${drawCount} 次
+
+【當前使用者在此張牌留下的研習心得筆記】：
+${userNote && userNote.trim() ? `「${userNote.trim()}」` : '（使用者目前尚未在此牌記錄心得筆記，正處於直覺感知與理性學習的啟蒙階段）'}
+
+請你嚴謹、深刻且溫暖地融合：
+1. 該牌面的視覺圖像符號學（人物姿態、顏色、背景景物、神聖幾何）
+2. 榮格深度心理學（原型、陰影、自性化、共時性、阿尼瑪/阿尼姆斯）
+3. 哲學思潮（斯多葛派的心靈韌性、存在主義的自由選擇、尼采的意志與超越、赫密士主義「如其在上，如其在下」、東方道家陰陽相生）
+4. 【核心重點】：深切對話「使用者目前的心得筆記」。如果有筆記，必須精準點出筆記中的敏銳洞見，指出其直覺碰觸到的哲學命題，並溫和指出潛在盲點或深化路徑；若無筆記，提供極具啟發性的直覺切入點引導其開始思考。
+
+請使用繁體中文 (Traditional Chinese) 提供優美、洗鍊且排版清晰的 Markdown 解析，結構必須包含：
+
+### 🏛️ 一、【${cardName} ${orientationLabel}】的宇宙哲學原型與象徵密碼
+- 解剖此牌在${school}視野下的核心形上學隱喻。
+- 解析其四元素（${element}）與圖像符號如何體現宇宙對立面的統一（如光明與陰影、行動與靜止、有限與無限）。
+
+### 🪞 二、心靈鏡像：與您自學筆記的深層哲思對話
+${userNote && userNote.trim() 
+  ? `- 深度聚焦您寫下的直覺觀察：「${userNote.trim()}」。
+- 從哲學與深度心理學角度，剖析您的筆記觸及了何種心靈本質，並給予學術與精神層面的高度共鳴。
+- 指出一個這張牌在更深層次上為您的思考帶來的「擴展維度」或「轉化提醒」。`
+  : `- 針對您目前尚未記錄筆記的空白起點，提供 2 個引領直覺的哲思凝視點，告訴您如何從畫面細節切入個人的自學心得。`}
+
+### 🌌 三、存在主義思辨：自由意志、命運與暗影轉化
+- 在真實人生處境中，這張牌如何打破我們常規的二元認知定勢？
+- ${isReversed ? '逆位所隱含的「向內反思、能量阻滯或自我懷疑」，如何透過哲學轉化成為靈魂重生的土壤？' : '正位所展現的「生命力奔湧與力量顯化」，如何避免傲慢，在動態中維持心靈的虛空與清醒？'}
+
+### 📜 四、哲思金句與日常生活實踐心法
+- **當日哲人啟發金句**：（提煉一句極具穿透力的哲學箴言，例如結合榮格、尼采、赫拉克利特或斯多葛大師思想）
+- **心靈煉金實踐提案**：提供一項具體的日常生活覺察行動實驗。
+- **靈魂叩問題**：提出一個直擊存在本質的自我提問，適合寫入今日隨身自省筆記。
+`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: prompt,
+      config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      },
+    });
+
+    const text = response.text || '無法生成解析內容';
+    return res.json({
+      content: text,
+      cardName,
+      orientation,
+      school,
+      timestamp: new Date().toISOString(),
+      isFallback: false,
+    });
+  } catch (error: any) {
+    console.error('Error in philosophical association API, using scholarly fallback:', error);
+    const { cardId, cardName, cardNameEn, orientation, element, astrology, keywords, symbolism, advice, userNote, school } = req.body;
+    const fallback = generatePhilosophicalFallback({
+      cardId,
+      cardName,
+      cardNameEn,
+      orientation: orientation || 'upright',
+      element,
+      astrology,
+      keywords,
+      symbolism,
+      advice,
+      userNote,
+      school,
+    });
+    return res.json({ ...fallback, isFallback: true });
+  }
+});
+
+function generatePhilosophicalFallback({
+  cardId,
+  cardName,
+  cardNameEn,
+  orientation,
+  element,
+  astrology,
+  keywords = [],
+  symbolism = [],
+  advice,
+  userNote,
+  school = '全方位深度哲學與心靈原型',
+}: {
+  cardId?: string;
+  cardName: string;
+  cardNameEn?: string;
+  orientation: string;
+  element?: string;
+  astrology?: string;
+  keywords?: string[];
+  symbolism?: string[];
+  advice?: string;
+  userNote?: string;
+  school?: string;
+}) {
+  const isReversed = orientation.includes('reversed') || orientation.includes('逆位');
+  const orientationLabel = isReversed ? '逆位 (Reversed)' : '正位 (Upright)';
+  const kwStr = keywords.length > 0 ? keywords.join('、') : '存在、轉化、自性';
+  const symbolsStr = symbolism.length > 0 ? symbolism.join('、') : '古典偉特神秘符號';
+
+  const text = `### 🏛️ 一、【${cardName} ${orientationLabel}】的宇宙哲學原型與象徵密碼
+
+在【${school}】的透鏡下審視，**${cardName}（${cardNameEn || ''}）** 代表著人類心靈向內探勘與宇宙秩序交織的原型節點。
+- **元素與星象秩序**：本牌體現【${element || '宇宙靈性原力'}】的流動，在【${astrology || '恆星意志'}】的律動下，揭示了生命不是靜態的承受，而是永恆動態的自我塑造。
+- **象徵密碼解構**：牌面中的【${symbolsStr}】絕非單純裝飾，而是深層心理能量的具象投射。它在意識與潛意識的交界處立下一座燈塔，提醒我們：外在所有的困頓與驚奇，皆是心靈內在風景的鏡像投射。
+
+### 🪞 二、心靈鏡像：與您自學筆記的深層哲思對話
+
+${
+  userNote && userNote.trim()
+    ? `您在自學研習筆記中深刻寫道：
+> *「${userNote.trim()}」*
+
+- **直覺共鳴剖析**：您的體悟精準地捕捉到了${cardName}最幽微的張力。您對牌面細節的敏銳覺知，證明您並未落入死記硬背牌義的俗套，而是以自己的真實生命經驗與古老符號進行真誠對話。
+- **哲學維度昇華**：榮格曾言：「往外看的人在作夢，向內看的人是清醒的。」您的筆記中蘊含著將抽象牌意落地為心靈修持的潛力。建議您更進一步思索：當您產生這份心得時，內心最渴望捍衛或釋放的，究竟是哪一部分的自我？`
+    : `您目前尚未在此牌留下文字紀錄。這片留白並非匱乏，而是無限可能的「未雕之璞（Tabula Rasa）」。
+- **第一凝視點**：請重新注視牌面中第一眼抓住您目光的色彩或姿態，感受它引發了哪種生理與情緒震顫。
+- **直覺提問法**：試問自己——「若這張牌是一面說話的鏡子，它此時最想揭露我未曾向他人言說的哪種心境？」`
+}
+
+### 🌌 三、存在主義思辨：自由意志、命運與暗影轉化
+
+偉特塔羅的偉大之處，在於它既承認命運潮汐的規律，又將最終的意義詮釋權交還給人的自由意志。
+- **思維定勢突破**：當前核心關鍵字為【${kwStr}】。一般人常將逆位視為不幸，將正位視為幸運；然而在存在主義哲學中，沒有任何一種處境是絕對好或壞，唯有「我們賦予它何種意義與回應」。
+- **${isReversed ? '逆位心靈煉金' : '正位自性平衡'}**：${
+    isReversed
+      ? '逆位的阻滯本質上是一道「內省防護網」。它阻斷了盲目的向外擴張，強迫我們回歸原點，檢視根基是否存在裂隙。接納此時的遲疑，正是最深沉的智慧。'
+      : '正位的順暢流動提醒我們警惕「舒適的麻木」。當順境來臨，真正的智者不會將功勞歸於傲慢，而是如道家「功成身退天之道」，在熱烈創造的同時維持心靈的虛空。'
+  }
+
+### 📜 四、哲思金句與日常生活實踐心法
+
+- **當日哲人啟發金句**：
+  > *「認識你自己；凡外在動盪者，皆是引導自性回歸本真的試金石。」* —— 偉特神秘哲思箴言
+- **心靈煉金實踐提案**：${advice || '今天花五分鐘安靜坐下，深呼吸三次，記錄一條今天最想對自己說的真心話，不必追求完美，但求絕對真實。'}
+- **靈魂叩問題**：在此時此刻的生命篇章中，我究竟是在順應真正的靈魂召喚，還是僅僅在迎合外在世界的期待？
+`;
+
+  return {
+    content: text,
+    cardName,
+    orientation,
+    school,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 // 6. List all custom card images in public/cards
 app.get('/api/cards/list', (_req, res) => {
   try {
@@ -525,4 +732,8 @@ async function setupApp() {
   });
 }
 
-setupApp();
+if (!process.env.VERCEL) {
+  setupApp();
+}
+
+export default app;

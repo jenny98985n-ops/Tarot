@@ -4,6 +4,7 @@ import { TarotCard, Orientation } from '../types/tarot';
 import { TarotCardView } from './TarotCardView';
 import { WebSearchModal } from './WebSearchModal';
 import { CardArtManagerModal } from './CardArtManagerModal';
+import { PhilosophicalAssociationModal } from './PhilosophicalAssociationModal';
 import { getCardMasteryMap, saveCardMasteryNote } from '../utils/storage';
 import { 
   Search, 
@@ -14,10 +15,11 @@ import {
   Droplets, 
   Wind, 
   Mountain, 
-  X,
-  Check,
-  Edit3,
-  Image as ImageIcon
+  X, 
+  Check, 
+  Edit3, 
+  Image as ImageIcon, 
+  Maximize2 
 } from 'lucide-react';
 
 interface TarotDeckEncyclopediaProps {
@@ -40,11 +42,15 @@ export const TarotDeckEncyclopedia: React.FC<TarotDeckEncyclopediaProps> = ({
 
   const [activeOrientation, setActiveOrientation] = useState<Orientation>('upright');
   const [isWebSearchOpen, setIsWebSearchOpen] = useState<boolean>(false);
+  const [isPhilosophicalModalOpen, setIsPhilosophicalModalOpen] = useState<boolean>(false);
+  const [philosophicalTargetCard, setPhilosophicalTargetCard] = useState<TarotCard | null>(null);
   const [userNote, setUserNote] = useState<string>('');
   const [isNoteSaved, setIsNoteSaved] = useState<boolean>(false);
   const [isArtModalOpen, setIsArtModalOpen] = useState<boolean>(false);
+  const [isFullscreenCardOpen, setIsFullscreenCardOpen] = useState<boolean>(false);
+  const [masteryRefreshKey, setMasteryRefreshKey] = useState<number>(0);
 
-  const masteryMap = useMemo(() => getCardMasteryMap(), []);
+  const masteryMap = useMemo(() => getCardMasteryMap(), [masteryRefreshKey]);
 
   // Filter cards
   const filteredCards = useMemo(() => {
@@ -247,6 +253,21 @@ export const TarotDeckEncyclopedia: React.FC<TarotDeckEncyclopediaProps> = ({
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" title="已有個人筆記" />
                 )}
               </div>
+
+              {/* AI Deep Meaning Association Quick Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPhilosophicalTargetCard(card);
+                  setIsPhilosophicalModalOpen(true);
+                }}
+                className="w-full mt-0.5 py-1 px-1.5 rounded-lg bg-gradient-to-r from-purple-950/80 via-stone-900 to-amber-950/80 hover:from-purple-900 hover:to-amber-900 border border-purple-500/30 hover:border-amber-400/60 text-[10px] text-purple-200 hover:text-amber-100 flex items-center justify-center gap-1 transition-all shadow-sm group/btn"
+                title="調用 Gemini API，依據當前用戶筆記與牌面屬性生成哲學解析"
+              >
+                <Sparkles className="w-3 h-3 text-amber-400 group-hover/btn:rotate-12 transition-transform flex-shrink-0" />
+                <span className="font-medium truncate">AI深度牌義聯想</span>
+              </button>
             </div>
           );
         })}
@@ -288,13 +309,31 @@ export const TarotDeckEncyclopedia: React.FC<TarotDeckEncyclopediaProps> = ({
             <div className="p-6 overflow-y-auto flex-1 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Visual View */}
-                <div className="md:col-span-4 flex flex-col items-center gap-4">
-                  <TarotCardView
-                    card={selectedCard}
-                    orientation={activeOrientation}
-                    size="lg"
-                    isFlipped={true}
-                  />
+                <div className="md:col-span-4 flex flex-col items-center gap-3">
+                  <div
+                    className="relative group cursor-pointer"
+                    onClick={() => setIsFullscreenCardOpen(true)}
+                    title="點擊全螢幕檢視高清原畫"
+                  >
+                    <TarotCardView
+                      card={selectedCard}
+                      orientation={activeOrientation}
+                      size="lg"
+                      isFlipped={true}
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex flex-col items-center justify-center gap-1.5 text-xs text-amber-200 font-medium">
+                      <Maximize2 className="w-5 h-5 text-amber-400" />
+                      <span>點擊放大無裁切全圖</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsFullscreenCardOpen(true)}
+                    className="w-full py-1.5 px-3 rounded-xl bg-stone-950/80 hover:bg-stone-800 text-stone-300 hover:text-amber-200 text-xs flex items-center justify-center gap-1.5 transition-colors border border-stone-800 shadow-sm"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+                    查看 100% 全尺寸無裁切原圖
+                  </button>
 
                   {/* Orientation Toggle */}
                   <div className="flex items-center gap-1 p-1 bg-stone-950 rounded-xl border border-stone-800 w-full">
@@ -320,10 +359,22 @@ export const TarotDeckEncyclopedia: React.FC<TarotDeckEncyclopediaProps> = ({
                     </button>
                   </div>
 
+                  {/* Trigger AI Philosophical Association */}
+                  <button
+                    onClick={() => {
+                      setPhilosophicalTargetCard(selectedCard);
+                      setIsPhilosophicalModalOpen(true);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-900/60 via-amber-950/60 to-purple-900/60 hover:from-purple-900/90 hover:to-purple-900/90 border border-purple-500/40 hover:border-amber-400/70 text-purple-200 hover:text-amber-100 font-medium text-xs flex items-center justify-center gap-2 shadow-lg transition-all group"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
+                    <span>AI 深度牌義聯想 (哲學解析)</span>
+                  </button>
+
                   {/* Trigger Web Search */}
                   <button
                     onClick={() => setIsWebSearchOpen(true)}
-                    className="w-full py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+                    className="w-full py-2 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-medium text-xs flex items-center justify-center gap-2 transition-colors"
                   >
                     <Search className="w-3.5 h-3.5" />
                     搜尋網路多學派牌意
@@ -449,11 +500,82 @@ export const TarotDeckEncyclopedia: React.FC<TarotDeckEncyclopediaProps> = ({
         />
       )}
 
+      {/* AI Deep Philosophical Association Modal */}
+      {isPhilosophicalModalOpen && philosophicalTargetCard && (
+        <PhilosophicalAssociationModal
+          isOpen={isPhilosophicalModalOpen}
+          onClose={() => {
+            setIsPhilosophicalModalOpen(false);
+            setPhilosophicalTargetCard(null);
+          }}
+          card={philosophicalTargetCard}
+          initialOrientation={
+            philosophicalTargetCard.id === selectedCard?.id ? activeOrientation : 'upright'
+          }
+          initialNote={
+            philosophicalTargetCard.id === selectedCard?.id
+              ? userNote
+              : masteryMap[philosophicalTargetCard.id]?.userNotes || ''
+          }
+          onNoteUpdated={(newNote) => {
+            setMasteryRefreshKey((k) => k + 1);
+            if (selectedCard && selectedCard.id === philosophicalTargetCard.id) {
+              setUserNote(newNote);
+            }
+          }}
+        />
+      )}
+
       {/* Card Art Manager Modal */}
       <CardArtManagerModal
         isOpen={isArtModalOpen}
         onClose={() => setIsArtModalOpen(false)}
       />
+
+      {/* Fullscreen High-Res Card Lightbox Modal */}
+      {isFullscreenCardOpen && selectedCard && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+          onClick={() => setIsFullscreenCardOpen(false)}
+        >
+          <div 
+            className="relative max-w-lg w-full max-h-[95vh] flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between pb-3 px-1 text-xs">
+              <span className="font-serif font-bold text-amber-200">
+                {selectedCard.name} ({selectedCard.nameEn}) · 100% 完整原畫無裁切
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveOrientation((prev) => prev === 'upright' ? 'reversed' : 'upright')}
+                  className="px-2.5 py-1 rounded-lg bg-stone-900 border border-stone-700 text-amber-300 text-[11px] hover:bg-stone-800 transition-colors shadow-lg"
+                >
+                  切換為{activeOrientation === 'upright' ? '逆位' : '正位'}
+                </button>
+                <button
+                  onClick={() => setIsFullscreenCardOpen(false)}
+                  className="p-1 rounded-lg bg-stone-900 border border-stone-700 text-stone-300 hover:text-white hover:bg-stone-800 transition-colors shadow-lg"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className={`p-1 max-h-[82vh] transition-transform duration-500 flex items-center justify-center ${activeOrientation === 'reversed' ? 'rotate-180' : ''}`}>
+              <img
+                src={selectedCard.imageUrl || `/cards/${selectedCard.id}.jpg`}
+                alt={selectedCard.name}
+                className="max-h-[80vh] w-auto rounded-lg shadow-2xl object-contain border border-amber-500/30"
+              />
+            </div>
+
+            <div className="mt-2 text-center text-[11px] text-stone-400 font-sans">
+              標準 720×1200 高清古典萊德偉特塔羅牌面 · 頂部羅馬數字與底部牌名全部完整呈現
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { TarotCard } from '../types/tarot';
 
-export const TAROT_DECK: TarotCard[] = [
+const RAW_TAROT_DECK: TarotCard[] = [
   // ==========================================
   // MAJOR ARCANA (22 CARDS)
   // ==========================================
@@ -1392,6 +1392,12 @@ export const TAROT_DECK: TarotCard[] = [
     visualTheme: 'from-amber-600/20 to-emerald-800/20',
   },
 ];
+
+// All 78 cards have real Rider-Waite artwork mapped by default
+export const TAROT_DECK: TarotCard[] = RAW_TAROT_DECK.map((card) => ({
+  ...card,
+  imageUrl: card.imageUrl || `/cards/${card.id}.jpg`,
+}));
 
 // Helper to look up a card by ID
 export function getTarotCardById(id: string): TarotCard | undefined {

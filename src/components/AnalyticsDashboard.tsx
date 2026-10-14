@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { computeStatistics } from '../utils/storage';
+import { exportAnalyticsToGoogleSlides, SlidesExportResult } from '../utils/slidesExport';
 import { 
   Flame, 
   Droplets, 
@@ -12,7 +13,11 @@ import {
   BookOpen, 
   Star,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Presentation,
+  Loader2,
+  ExternalLink,
+  FileText
 } from 'lucide-react';
 import { TarotCardView } from './TarotCardView';
 
@@ -26,6 +31,23 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   onNavigateToDaily,
 }) => {
   const stats = useMemo(() => computeStatistics(), []);
+  const [isExportingSlides, setIsExportingSlides] = useState(false);
+  const [slidesResult, setSlidesResult] = useState<SlidesExportResult | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const handleExportSlides = async () => {
+    setIsExportingSlides(true);
+    setExportError(null);
+    try {
+      const res = await exportAnalyticsToGoogleSlides();
+      setSlidesResult(res);
+    } catch (err: any) {
+      console.error('Failed to export slides:', err);
+      setExportError(err.message || '匯出 Google 簡報時發生錯誤');
+    } finally {
+      setIsExportingSlides(false);
+    }
+  };
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -44,16 +66,66 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </p>
           </div>
 
-          {onNavigateToDaily && (
+          <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
             <button
-              onClick={onNavigateToDaily}
-              className="px-4 py-2 text-xs font-medium bg-amber-500 hover:bg-amber-400 text-stone-950 font-serif font-semibold rounded-xl transition-colors shadow-md flex items-center gap-1.5 whitespace-nowrap self-start md:self-auto"
+              onClick={handleExportSlides}
+              disabled={isExportingSlides}
+              className="px-3.5 py-2 text-xs font-medium bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 font-serif font-semibold rounded-xl transition-all shadow-md flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+              title="匯出為 GOOGLE 線上版簡報，方便離線閱讀或列印保存"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              今日抽牌打卡
+              {isExportingSlides ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                  <span>生成簡報中...</span>
+                </>
+              ) : (
+                <>
+                  <Presentation className="w-3.5 h-3.5 text-amber-400" />
+                  <span>匯出 Google 簡報</span>
+                </>
+              )}
             </button>
-          )}
+
+            {onNavigateToDaily && (
+              <button
+                onClick={onNavigateToDaily}
+                className="px-4 py-2 text-xs font-medium bg-amber-500 hover:bg-amber-400 text-stone-950 font-serif font-semibold rounded-xl transition-colors shadow-md flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                今日抽牌打卡
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Export Success Banner */}
+        {slidesResult && (
+          <div className="mt-4 p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-500/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 text-emerald-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>
+                <strong>簡報已成功匯出至 Google Drive！</strong> 包含數據統計、元素分布、高頻牌卡與落地指引。
+              </span>
+            </div>
+            <a
+              href={slidesResult.presentationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 transition-colors shrink-0 shadow-sm self-start sm:self-auto"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              開啟 Google 簡報
+            </a>
+          </div>
+        )}
+
+        {/* Export Error Banner */}
+        {exportError && (
+          <div className="mt-4 p-3 rounded-xl bg-rose-950/80 border border-rose-500/50 flex items-center gap-2 text-xs text-rose-200">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{exportError}</span>
+          </div>
+        )}
       </div>
 
       {/* 4 Key Metrics Bar */}

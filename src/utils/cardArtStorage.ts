@@ -7,10 +7,19 @@ export interface CustomCardArtMap {
   [cardId: string]: string; // value is URL or Base64 data URL
 }
 
-// Built-in cards available in /cards/ directory
-export const BUILT_IN_CARD_ARTS: Record<string, string> = {
-  cups_01: '/cards/cups_01.svg',
-};
+// Built-in 78 Rider-Waite cards available in /cards/ directory
+const ALL_CARD_IDS = [
+  ...Array.from({ length: 22 }, (_, i) => `major_${String(i).padStart(2, '0')}`),
+  ...Array.from({ length: 14 }, (_, i) => `wands_${String(i + 1).padStart(2, '0')}`),
+  ...Array.from({ length: 14 }, (_, i) => `cups_${String(i + 1).padStart(2, '0')}`),
+  ...Array.from({ length: 14 }, (_, i) => `swords_${String(i + 1).padStart(2, '0')}`),
+  ...Array.from({ length: 14 }, (_, i) => `pentacles_${String(i + 1).padStart(2, '0')}`),
+];
+
+export const BUILT_IN_CARD_ARTS: Record<string, string> = ALL_CARD_IDS.reduce((acc, id) => {
+  acc[id] = `/cards/${id}.jpg`;
+  return acc;
+}, {} as Record<string, string>);
 
 export function getCustomCardArtMap(): CustomCardArtMap {
   if (typeof window === 'undefined') return { ...BUILT_IN_CARD_ARTS };
@@ -25,7 +34,7 @@ export function getCustomCardArtMap(): CustomCardArtMap {
 
 export function getCardArt(cardId: string): string | undefined {
   const map = getCustomCardArtMap();
-  return map[cardId] || BUILT_IN_CARD_ARTS[cardId];
+  return map[cardId] || BUILT_IN_CARD_ARTS[cardId] || `/cards/${cardId}.jpg`;
 }
 
 // Automatically detect any image files placed into /public/cards
