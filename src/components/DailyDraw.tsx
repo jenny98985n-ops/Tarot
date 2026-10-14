@@ -33,7 +33,14 @@ import {
   Copy,
   BookOpen,
   ArrowRight,
-  X
+  X,
+  Heart,
+  Briefcase,
+  Activity,
+  Coins,
+  GitFork,
+  Layers,
+  Compass
 } from 'lucide-react';
 
 interface DailyDrawProps {
@@ -41,6 +48,140 @@ interface DailyDrawProps {
   onNavigateToJournal?: () => void;
   onNavigateToSpread?: (spreadId: string, question: string) => void;
 }
+
+export interface QuestionCategory {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badgeColor: string;
+  activeColor: string;
+  spreadId: string;
+  spreadName: string;
+  cardCount: number;
+  reason: string;
+  positionsSummary: string;
+  sampleQuestions: string[];
+}
+
+export const QUESTION_CATEGORIES: QuestionCategory[] = [
+  {
+    id: 'love',
+    label: '感情戀愛',
+    icon: Heart,
+    badgeColor: 'border-pink-500/40 text-pink-300 bg-pink-500/10',
+    activeColor: 'bg-pink-500/25 border-pink-400 text-pink-200 shadow-pink-500/20 shadow-md font-semibold',
+    spreadId: 'love_mirror_4',
+    spreadName: '感情心靈·雙向鏡像牌陣',
+    cardCount: 4,
+    reason: '專門針對感情交往、伴侶相處與戀愛盲點設計，同時透視「你的心態」、「對方的真實看法」、「雙方相處阻礙盲點」與「關係演變趨勢」。',
+    positionsSummary: '問卜者心態 ➔ 對方真實態度 ➔ 互動盲點障礙 ➔ 未來走向與建議',
+    sampleQuestions: [
+      '我們未來的感情發展走勢與關係契機？',
+      '對方目前對這段關係的真實看法與期待？',
+      '如何突破目前的相處冷淡或溝通瓶頸？',
+      '面對感情的十字路口，我該如何做出選擇？',
+    ],
+  },
+  {
+    id: 'career',
+    label: '事業工作',
+    icon: Briefcase,
+    badgeColor: 'border-amber-500/40 text-amber-300 bg-amber-500/10',
+    activeColor: 'bg-amber-500/25 border-amber-400 text-amber-200 shadow-amber-500/20 shadow-md font-semibold',
+    spreadId: 'time_flow_3',
+    spreadName: '時間之流·聖三牌陣',
+    cardCount: 3,
+    reason: '依循時間發展軸線，全方位釐清工作專案的「過去積累根源」、「當前真實挑戰與處境」及「未來的關鍵演化趨勢」。',
+    positionsSummary: '過去·根源成因 ➔ 現在·真實處境 ➔ 未來·自然走向',
+    sampleQuestions: [
+      '目前工作事業遭遇的瓶頸該如何突破？',
+      '近期職場升遷或轉職的最佳行動策略？',
+      '這項專案或新業務未來的成效與發展走勢？',
+      '如何發揮個人核心競爭力，實現職場躍升？',
+    ],
+  },
+  {
+    id: 'health',
+    label: '健康身心',
+    icon: Activity,
+    badgeColor: 'border-emerald-500/40 text-emerald-300 bg-emerald-500/10',
+    activeColor: 'bg-emerald-500/25 border-emerald-400 text-emerald-200 shadow-emerald-500/20 shadow-md font-semibold',
+    spreadId: 'mind_body_spirit_3',
+    spreadName: '身心靈·整全對齊牌陣',
+    cardCount: 3,
+    reason: '專注身心靈整體平衡，透視「心智思維與精神壓力」、「肉身健康與生活實相」及「深層潛意識真實渴望」。',
+    positionsSummary: '心智·理智思維 ➔ 肉身·生活實相 ➔ 靈魂·真實渴望',
+    sampleQuestions: [
+      '如何調適近期的焦慮情緒與生活壓力，找回身心平衡？',
+      '身體能量正在提醒我注意哪些生活節奏與作息？',
+      '我深層潛意識中未被滿足的真實靈魂渴望是什麼？',
+      '如何釋放過度思慮，重新獲得充沛的精神活力？',
+    ],
+  },
+  {
+    id: 'decision',
+    label: '二難抉擇',
+    icon: GitFork,
+    badgeColor: 'border-cyan-500/40 text-cyan-300 bg-cyan-500/10',
+    activeColor: 'bg-cyan-500/25 border-cyan-400 text-cyan-200 shadow-cyan-500/20 shadow-md font-semibold',
+    spreadId: 'two_paths_choice_5',
+    spreadName: '二擇一·路徑抉擇牌陣',
+    cardCount: 5,
+    reason: '在面臨兩條不同道路（如A方案或B方案、轉職或留職）時，客觀比對方案A與方案B各自的近期演變與最終成果。',
+    positionsSummary: '當前立足現狀 ➔ 方案A近期 ➔ 方案A結果 ➔ 方案B近期 ➔ 方案B結果',
+    sampleQuestions: [
+      '面對眼前的重要抉擇（方案A vs 方案B），各自的發展如何？',
+      '該轉職換新跑道，還是留在現有職位繼續深耕？',
+      '面對這項人生重大決策，哪一個方向更符合我的長遠利益？',
+    ],
+  },
+  {
+    id: 'wealth',
+    label: '財富財務',
+    icon: Coins,
+    badgeColor: 'border-yellow-500/40 text-yellow-300 bg-yellow-500/10',
+    activeColor: 'bg-yellow-500/25 border-yellow-400 text-yellow-200 shadow-yellow-500/20 shadow-md font-semibold',
+    spreadId: 'holy_triangle_3',
+    spreadName: '聖三角·破局解惑牌陣',
+    cardCount: 3,
+    reason: '剖析財務金錢問題的深層本質、外在環境或消費阻力，並給予具體可落地的開源節流破局指引。',
+    positionsSummary: '問題的核心本質 ➔ 環境或外在阻力 ➔ 破局的行動指引',
+    sampleQuestions: [
+      '近期財務狀況如何打破瓶頸、建立穩定收益？',
+      '當前的投資或收支規劃中，有哪些潛在盲點需注意？',
+      '如何開拓新的財富管道與事業變現機會？',
+    ],
+  },
+  {
+    id: 'comprehensive',
+    label: '全景十字',
+    icon: Layers,
+    badgeColor: 'border-purple-500/40 text-purple-300 bg-purple-500/10',
+    activeColor: 'bg-purple-500/25 border-purple-400 text-purple-200 shadow-purple-500/20 shadow-md font-semibold',
+    spreadId: 'celtic_cross_10',
+    spreadName: '凱爾特十字·全景深度牌陣',
+    cardCount: 10,
+    reason: '西方神秘學最具穿透力的大型十牌陣，全方位解析事件核心、阻礙、潛意識根源、過去未來、環境與最終成就。',
+    positionsSummary: '核心現狀 ➔ 挑戰阻礙 ➔ 潛意識 ➔ 過去根源 ➔ 目標希望 ➔ 即將來臨 ➔ 自我心態 ➔ 外在環境 ➔ 恐懼希望 ➔ 最終結果',
+    sampleQuestions: [
+      '我目前整體生命週期的宏觀核心課題與轉折是什麼？',
+      '全方位透析我接下來半年的運勢轉折與深層靈魂功課？',
+    ],
+  },
+  {
+    id: 'custom',
+    label: '自訂類別',
+    icon: PenTool,
+    badgeColor: 'border-stone-500/40 text-stone-300 bg-stone-500/10',
+    activeColor: 'bg-stone-700/60 border-stone-400 text-stone-100 shadow-stone-500/20 shadow-md font-semibold',
+    spreadId: 'holy_triangle_3',
+    spreadName: '聖三角·破局解惑牌陣',
+    cardCount: 3,
+    reason: '針對自訂特殊主題，快速剖析核心問題、外在阻礙並提供具體破局行動指引。',
+    positionsSummary: '核心本質 ➔ 阻力盲點 ➔ 破局指引',
+    sampleQuestions: [],
+  },
+];
 
 const QUESTION_PRESETS = [
   '今天的整體能量與心靈功課是什麼？',
@@ -88,7 +229,9 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
   const [aiError, setAiError] = useState<string | null>(null);
   const [copiedAi, setCopiedAi] = useState<boolean>(false);
 
-  // AI Spread Recommendation state
+  // Question Category & Spread Recommendation states
+  const [selectedCategory, setSelectedCategory] = useState<string>('career');
+  const [customCategoryInput, setCustomCategoryInput] = useState<string>('');
   const [isRecommendingSpread, setIsRecommendingSpread] = useState<boolean>(false);
   const [spreadRecommendation, setSpreadRecommendation] = useState<{
     recommendation: string;
@@ -96,25 +239,63 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
     recommendedSpreadName: string;
     cardCount: number;
     reason: string;
-  } | null>(null);
+    categoryLabel: string;
+    positionsSummary: string;
+  } | null>(() => {
+    const defaultCat = QUESTION_CATEGORIES[1]; // career
+    return {
+      recommendation: `針對【${defaultCat.label}】課題，已為您自動適配最契合的牌陣：【${defaultCat.spreadName}】（共 ${defaultCat.cardCount} 張牌）。\n\n📌 推薦理由：${defaultCat.reason}\n\n🎯 牌位推演：${defaultCat.positionsSummary}`,
+      recommendedSpreadId: defaultCat.spreadId,
+      recommendedSpreadName: defaultCat.spreadName,
+      cardCount: defaultCat.cardCount,
+      reason: defaultCat.reason,
+      categoryLabel: defaultCat.label,
+      positionsSummary: defaultCat.positionsSummary,
+    };
+  });
+
+  const handleSelectCategory = (catId: string) => {
+    setSelectedCategory(catId);
+    const cat = QUESTION_CATEGORIES.find((c) => c.id === catId);
+    if (!cat) return;
+
+    if (cat.sampleQuestions.length > 0) {
+      setQuestion(cat.sampleQuestions[0]);
+    }
+
+    setSpreadRecommendation({
+      recommendation: `針對【${cat.label}】課題，已為您自動適配最契合的牌陣：【${cat.spreadName}】（共 ${cat.cardCount} 張牌）。\n\n📌 推薦理由：${cat.reason}\n\n🎯 牌位推演：${cat.positionsSummary}`,
+      recommendedSpreadId: cat.spreadId,
+      recommendedSpreadName: cat.spreadName,
+      cardCount: cat.cardCount,
+      reason: cat.reason,
+      categoryLabel: cat.label,
+      positionsSummary: cat.positionsSummary,
+    });
+  };
 
   const handleRecommendSpread = async () => {
     if (!question.trim()) return;
     setIsRecommendingSpread(true);
-    setSpreadRecommendation(null);
+    const activeCat = QUESTION_CATEGORIES.find((c) => c.id === selectedCategory);
+    const catLabel = selectedCategory === 'custom' && customCategoryInput.trim() 
+      ? customCategoryInput.trim() 
+      : (activeCat?.label || '綜合探索');
     try {
       const res = await fetch('/api/tarot/spread-recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, category: catLabel }),
       });
       const data = await res.json();
       setSpreadRecommendation({
         recommendation: data.recommendation,
-        recommendedSpreadId: data.recommendedSpreadId || 'time_flow_3',
-        recommendedSpreadName: data.recommendedSpreadName || '時間之流·聖三牌陣',
-        cardCount: data.cardCount || 3,
-        reason: data.reason || '契合此提問之探尋焦點',
+        recommendedSpreadId: data.recommendedSpreadId || activeCat?.spreadId || 'time_flow_3',
+        recommendedSpreadName: data.recommendedSpreadName || activeCat?.spreadName || '時間之流·聖三牌陣',
+        cardCount: data.cardCount || activeCat?.cardCount || 3,
+        reason: data.reason || activeCat?.reason || '契合此提問之探尋焦點',
+        categoryLabel: catLabel,
+        positionsSummary: activeCat?.positionsSummary || '核心牌位連動解析',
       });
     } catch (e: any) {
       console.error('Failed to get spread recommendation:', e);
@@ -720,93 +901,150 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
             </div>
           </div>
 
-          {/* Question Prompt Input - Drives AI Customized Interpretation */}
-          <div className="max-w-2xl mx-auto space-y-3.5 text-center">
+          {/* Question Category & Prompt Selection - Automatic Spread Recommendation */}
+          <div className="max-w-2xl mx-auto space-y-4 text-center">
+            {/* Step Header */}
             <div className="flex items-center justify-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-400" />
               <label className="block text-xs font-serif font-bold text-amber-200 tracking-wider">
-                ✦ 設定您的占卜提問（AI 偉特客製化牌意解讀核心依據）✦
+                ✦ 選擇問題類別與提問（系統自動為您推薦最契合的牌陣）✦
               </label>
             </div>
 
+            {/* Category Selection Chips */}
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {QUESTION_CATEGORIES.map((cat) => {
+                  const Icon = cat.icon;
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => handleSelectCategory(cat.id)}
+                      className={`px-3 py-1.5 text-xs font-serif rounded-xl border transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isSelected
+                          ? cat.activeColor
+                          : 'bg-stone-900/80 text-stone-400 border-stone-800 hover:text-stone-200 hover:border-stone-700'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{cat.label}</span>
+                      {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse ml-0.5" />}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom Category Input if 'custom' is selected */}
+              {selectedCategory === 'custom' && (
+                <div className="max-w-md mx-auto pt-1 animate-in fade-in">
+                  <input
+                    type="text"
+                    value={customCategoryInput}
+                    onChange={(e) => setCustomCategoryInput(e.target.value)}
+                    placeholder="請輸入您的自訂課題類別（如：家庭關係、留學移民、租賃置產）..."
+                    className="w-full px-3 py-1.5 rounded-lg bg-stone-950/90 border border-stone-700 focus:border-amber-400 focus:outline-none text-stone-200 text-xs text-center font-serif placeholder:text-stone-500 shadow-inner"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Question Textarea/Input */}
             <div className="relative">
               <input
                 type="text"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="請在此輸入您今天想深入探索的主題或具體提問（如：工作突破、感情發展、重要抉擇）..."
+                placeholder="請在此輸入您想深入探索的主題或具體提問（如：工作突破、感情發展、重要抉擇）..."
                 className="w-full px-4 py-3 rounded-xl bg-stone-950/90 border border-amber-500/40 focus:border-amber-400 focus:outline-none text-stone-100 text-xs sm:text-sm text-center font-serif placeholder:text-stone-500 shadow-inner transition-colors"
               />
             </div>
 
-            {/* Quick Inspiration Presets */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
-              <span className="text-[11px] text-stone-400">快速帶入提問：</span>
-              {QUESTION_PRESETS.map((preset, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setQuestion(preset)}
-                  className={`px-2.5 py-1 text-[11px] rounded-lg transition-all border ${
-                    question === preset
-                      ? 'bg-amber-500/25 text-amber-300 border-amber-500/50 font-semibold shadow-sm'
-                      : 'bg-stone-900/80 text-stone-400 border-stone-800 hover:text-stone-200 hover:border-stone-700'
-                  }`}
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
+            {/* Category-Tailored Sample Questions */}
+            {(() => {
+              const activeCat = QUESTION_CATEGORIES.find((c) => c.id === selectedCategory);
+              const questionsToShow = activeCat && activeCat.sampleQuestions.length > 0
+                ? activeCat.sampleQuestions
+                : QUESTION_PRESETS;
+              return (
+                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
+                  <span className="text-[11px] text-stone-400">快速帶入提問：</span>
+                  {questionsToShow.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setQuestion(preset)}
+                      className={`px-2.5 py-1 text-[11px] rounded-lg transition-all border ${
+                        question === preset
+                          ? 'bg-amber-500/25 text-amber-300 border-amber-500/50 font-semibold shadow-sm'
+                          : 'bg-stone-900/80 text-stone-400 border-stone-800 hover:text-stone-200 hover:border-stone-700'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
 
-            {/* AI Spread Recommendation Button */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={handleRecommendSpread}
-                disabled={isRecommendingSpread}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-purple-950/80 via-stone-900 to-amber-950/80 hover:from-purple-900/90 hover:to-amber-900/90 border border-purple-500/40 hover:border-amber-400/60 text-purple-200 text-xs font-serif font-semibold shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
-                title="AI 依據您輸入的問題，分析並推薦最適合此課題的塔羅牌陣"
-              >
-                <Bot className="w-4 h-4 text-purple-400" />
-                <span>🔮 依我的提問建議選擇哪種牌陣</span>
-                {isRecommendingSpread && <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />}
-              </button>
-            </div>
-
-            {/* AI Spread Recommendation Result Banner */}
+            {/* Automatic Spread Recommendation Result Card */}
             {spreadRecommendation && (
-              <div className="text-left p-4 rounded-2xl bg-gradient-to-br from-stone-950 via-[#151224] to-stone-950 border border-purple-500/40 shadow-2xl space-y-3.5 animate-in fade-in slide-in-from-top-2">
-                <div className="flex items-center justify-between pb-2 border-b border-purple-500/20">
-                  <div className="flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-purple-500/20 text-purple-300">
-                      <Sparkles className="w-4 h-4" />
+              <div className="text-left p-4 rounded-2xl bg-gradient-to-br from-stone-950 via-[#151224] to-stone-950 border border-amber-500/30 shadow-2xl space-y-3 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between pb-2.5 border-b border-stone-800/80">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/20">
+                      <Compass className="w-4 h-4" />
                     </span>
                     <div>
-                      <h4 className="font-serif font-bold text-amber-200 text-sm">
-                        AI 導師推薦牌陣：【{spreadRecommendation.recommendedSpreadName}（共 {spreadRecommendation.cardCount} 張牌）】
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          {spreadRecommendation.categoryLabel} 專屬推薦
+                        </span>
+                        <span className="text-[10px] text-amber-400 font-medium">
+                          ✦ 自動推薦牌陣
+                        </span>
+                      </div>
+                      <h4 className="font-serif font-bold text-amber-200 text-sm mt-0.5">
+                        【{spreadRecommendation.recommendedSpreadName}】（共 {spreadRecommendation.cardCount} 張牌）
                       </h4>
-                      <p className="text-[11px] text-purple-300/80">
-                        {spreadRecommendation.reason}
-                      </p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setSpreadRecommendation(null)}
                     className="p-1 text-stone-400 hover:text-stone-200 rounded-lg hover:bg-stone-800 transition-colors"
+                    title="收起推薦"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="text-xs text-stone-200 leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto pr-1">
-                  {spreadRecommendation.recommendation}
+                {/* Reason & Position preview */}
+                <div className="space-y-2 text-xs">
+                  <p className="text-stone-300 leading-relaxed">
+                    <strong className="text-amber-300/90 font-serif">推薦理由：</strong>
+                    {spreadRecommendation.reason}
+                  </p>
+                  {spreadRecommendation.positionsSummary && (
+                    <div className="p-2.5 rounded-lg bg-stone-900/70 border border-stone-800 text-[11px] text-stone-400 flex items-center gap-2">
+                      <Layers className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span><strong>牌位演進結構：</strong>{spreadRecommendation.positionsSummary}</span>
+                    </div>
+                  )}
+                  {spreadRecommendation.recommendation && spreadRecommendation.recommendation !== spreadRecommendation.reason && (
+                    <div className="text-[11px] text-stone-300/80 whitespace-pre-line max-h-36 overflow-y-auto pr-1 border-t border-stone-800/60 pt-2">
+                      {spreadRecommendation.recommendation}
+                    </div>
+                  )}
                 </div>
 
+                {/* Confirmation & Jump Actions */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-2 border-t border-stone-800/80">
-                  <span className="text-[11px] text-stone-400">
-                    是否要切換至該牌陣展開多牌深度推演？
-                  </span>
+                  <div className="text-[11px] text-stone-400 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>確認此牌陣後將自動跳轉至對應牌陣介面開始推演：</span>
+                  </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
@@ -819,19 +1057,34 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
                       <button
                         type="button"
                         onClick={() => {
+                          sounds.playRevealChime();
                           onNavigateToSpread(spreadRecommendation.recommendedSpreadId, question);
                         }}
-                        className="flex-1 sm:flex-none px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-serif font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                        className="flex-1 sm:flex-none px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-serif font-bold text-xs shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>立即以此牌陣抽牌 ({spreadRecommendation.cardCount}張)</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        <span>✦ 確認並前往【{spreadRecommendation.recommendedSpreadName}】➔</span>
                       </button>
                     )}
                   </div>
                 </div>
               </div>
             )}
+
+            {/* AI Deep Analysis Optional Button */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={handleRecommendSpread}
+                disabled={isRecommendingSpread}
+                className="px-3.5 py-1.5 rounded-lg bg-stone-900/90 hover:bg-stone-800 border border-purple-500/30 hover:border-purple-400/60 text-purple-300 hover:text-purple-200 text-[11px] font-serif shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                title="調用 Gemini AI 針對此問題進行更深入的偉特牌位解構推薦"
+              >
+                <Bot className="w-3.5 h-3.5 text-purple-400" />
+                <span>🔮 AI 深度導師解析此提問適合之牌陣</span>
+                {isRecommendingSpread && <Loader2 className="w-3 h-3 animate-spin text-purple-400" />}
+              </button>
+            </div>
 
             {/* Workflow Guidance Card */}
             <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-300/90 leading-relaxed text-left flex items-start gap-2.5">

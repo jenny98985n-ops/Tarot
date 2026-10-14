@@ -1457,6 +1457,20 @@ export const SPREAD_TEMPLATES = [
     ],
   },
   {
+    id: 'love_mirror_4',
+    name: '感情心靈·雙向鏡像牌陣',
+    nameEn: 'Relational Mirror Spread (4-Cards)',
+    cardCount: 4,
+    description: '專為感情戀愛與人際互動設計，透視雙方真實心理期待、互動障礙盲點與未來演變走向。',
+    suitableFor: '戀愛交往、感情瓶頸、復合評估、重要人際關係互動',
+    positions: [
+      { index: 1, name: '問卜者內在心態', description: '你對這段關係的真實看法、潛在防衛或深層期待。' },
+      { index: 2, name: '對方眼中的關係', description: '對方目前對這段關係的心態、感受與核心態度。' },
+      { index: 3, name: '彼此互動的盲點', description: '卡在雙方之間的無形阻礙、溝通摩擦或潛意識投射。' },
+      { index: 4, name: '未來走向與轉化建議', description: '若維持當前狀態的演進趨勢，以及促進正向流動的指引。' },
+    ],
+  },
+  {
     id: 'two_paths_choice_5',
     name: '二擇一·路徑抉擇牌陣',
     nameEn: 'Two Paths Choice Spread (5-Cards)',

@@ -293,11 +293,11 @@ ${userNote && userNote.trim()
 
 // 3. Recommend Spread API
 apiRouter.post('/tarot/spread-recommend', async (req, res) => {
-  const { question, situation } = req.body;
+  const { question, situation, category } = req.body;
   const ai = getGeminiClient();
 
   if (!ai) {
-    const fallback = generateSpreadRecommendationFallback(question, situation);
+    const fallback = generateSpreadRecommendationFallback(question, situation, category);
     return res.json({
       ...fallback,
       isFallback: true,
@@ -305,24 +305,26 @@ apiRouter.post('/tarot/spread-recommend', async (req, res) => {
   }
 
   try {
-    const fallback = generateSpreadRecommendationFallback(question, situation);
+    const fallback = generateSpreadRecommendationFallback(question, situation, category);
     const prompt = `你是一位精通經典萊德偉特塔羅（Rider-Waite-Smith）與神秘學心理原型的資深塔羅導師。
 使用者提出了一項具體的生活提問或占卜課題：
+${category ? `【問題類別】：${category}` : ''}
 【使用者提問】：「${question || '想要對目前的整體生活進行深度審視與啟發'}」
 ${situation ? `【補充情境】：${situation}` : ''}
 
-【系統內建的 6 款經典牌陣】：
+【系統內建的 7 款經典牌陣】：
 1. 每日一牌·心靈指引 (id: daily_single, 1張牌) —— 適用於今日能量焦點、晨間啟發、日常簡單察覺
 2. 時間之流·聖三牌陣 (id: time_flow_3, 3張牌) —— 適用於事件發展走向、過去現在未來、脈絡釐清
 3. 聖三角·破局解惑牌陣 (id: holy_triangle_3, 3張牌) —— 適用於遭遇瓶頸阻礙、尋找突破策略與行動指引
-4. 身心靈·整全對齊牌陣 (id: mind_body_spirit_3, 3張牌) —— 適用於身心疲憊、壓力調適、心理念頭與真實靈魂渴望之對齊
-5. 二擇一·路徑抉擇牌陣 (id: two_paths_choice_5, 5張牌) —— 適用於兩難抉擇、轉職留職、A方案與B方案對照評估
-6. 凱爾特十字·全景深度牌陣 (id: celtic_cross_10, 10張牌) —— 適用於重大人生轉折、全方位深層透析、核心盲點至最終歸宿
+4. 身心靈·整全對齊牌陣 (id: mind_body_spirit_3, 3張牌) —— 適用於健康、身心疲憊、壓力調適、心理念頭與真實靈魂渴望之對齊
+5. 感情心靈·雙向鏡像牌陣 (id: love_mirror_4, 4張牌) —— 專為感情戀愛與人際互動設計，雙方心態、盲點阻礙與未來走向
+6. 二擇一·路徑抉擇牌陣 (id: two_paths_choice_5, 5張牌) —— 適用於工作事業抉擇、兩難選擇、A方案與B方案對照評估
+7. 凱爾特十字·全景深度牌陣 (id: celtic_cross_10, 10張牌) —— 適用於重大人生轉折、全方位深層透析、核心盲點至最終歸宿
 
-請為使用者推薦「最契合該提問」的牌陣。
+請為使用者推薦「最契合該問題類別與提問」的牌陣。
 請以繁體中文 (Traditional Chinese) 提供優雅深邃的 Markdown 分析：
-- 第一行必須包含推薦的牌陣代號與名稱，格式如：【推薦牌陣：二擇一·路徑抉擇牌陣 (id: two_paths_choice_5, 5張牌)】
-- 為什麼這個牌陣最能透析使用者的這個問題（緊扣提問，切中痛點）
+- 第一行必須包含推薦的牌陣代號與名稱，格式如：【推薦牌陣：感情心靈·雙向鏡像牌陣 (id: love_mirror_4, 4張牌)】
+- 為什麼這個牌陣最能透析使用者的這個問題（緊扣類別與提問，切中痛點）
 - 牌位結構說明（牌位 1、牌位 2... 的定義與彼此呼應）
 - 抽牌與自學心態建議（如何避免焦慮、如何從符號中看見指引）`;
 
@@ -338,7 +340,11 @@ ${situation ? `【補充情境】：${situation}` : ''}
     let targetSpreadName = fallback.recommendedSpreadName;
     let targetCardCount = fallback.cardCount;
 
-    if (text.includes('two_paths_choice_5') || text.includes('二擇一')) {
+    if (text.includes('love_mirror_4') || text.includes('雙向鏡像') || text.includes('感情心靈')) {
+      targetSpreadId = 'love_mirror_4';
+      targetSpreadName = '感情心靈·雙向鏡像牌陣';
+      targetCardCount = 4;
+    } else if (text.includes('two_paths_choice_5') || text.includes('二擇一') || text.includes('路徑抉擇')) {
       targetSpreadId = 'two_paths_choice_5';
       targetSpreadName = '二擇一·路徑抉擇牌陣';
       targetCardCount = 5;
@@ -805,7 +811,7 @@ ${
   };
 }
 
-function generateSpreadRecommendationFallback(question?: string, situation?: string): {
+function generateSpreadRecommendationFallback(question?: string, situation?: string, category?: string): {
   recommendation: string;
   recommendedSpreadId: string;
   recommendedSpreadName: string;
@@ -813,37 +819,48 @@ function generateSpreadRecommendationFallback(question?: string, situation?: str
   reason: string;
 } {
   const q = (question || '').toLowerCase();
+  const cat = (category || '').toLowerCase();
   let spreadId = 'time_flow_3';
   let spreadName = '時間之流·聖三牌陣';
   let cardCount = 3;
   let reason = '最適合梳理事件因果脈絡、過去成因、當前處境與未來的演進趨勢。';
 
-  if (q.includes('選擇') || q.includes('要不要') || q.includes('還是') || q.includes('二選一') || q.includes('去留') || q.includes('換工作') || q.includes('離職') || q.includes('抉擇')) {
+  if (cat === 'love' || cat.includes('感情') || cat.includes('戀愛') || q.includes('感情') || q.includes('戀愛') || q.includes('復合') || q.includes('他') || q.includes('她') || q.includes('曖昧') || q.includes('伴侶')) {
+    spreadId = 'love_mirror_4';
+    spreadName = '感情心靈·雙向鏡像牌陣';
+    cardCount = 4;
+    reason = '專為感情戀愛設計，深度透視雙方的內在期待、互動溝通盲點與關係演變走向。';
+  } else if (cat === 'health' || cat.includes('健康') || cat.includes('身心') || q.includes('健康') || q.includes('身心') || q.includes('累') || q.includes('壓力') || q.includes('焦慮') || q.includes('失衡') || q.includes('平衡')) {
+    spreadId = 'mind_body_spirit_3';
+    spreadName = '身心靈·整全對齊牌陣';
+    cardCount = 3;
+    reason = '檢視自我內在心智思維、身體生活實相與靈魂真實渴望三個維度的能量平衡狀態。';
+  } else if (cat === 'career' || cat.includes('事業') || cat.includes('工作') || cat === 'decision' || q.includes('選擇') || q.includes('要不要') || q.includes('還是') || q.includes('二選一') || q.includes('轉職') || q.includes('離職') || q.includes('留職') || q.includes('抉擇')) {
     spreadId = 'two_paths_choice_5';
     spreadName = '二擇一·路徑抉擇牌陣';
     cardCount = 5;
-    reason = '當面臨兩條截然不同的路徑或選項時，能清晰對照方案 A 與方案 B 各自的演變與心靈代價。';
+    reason = '當面臨工作事業或重大路徑抉擇時，清晰對照方案 A 與方案 B 各自的演變與心靈代價。';
   } else if (q.includes('阻礙') || q.includes('瓶頸') || q.includes('卡住') || q.includes('破局') || q.includes('解決') || q.includes('突破') || q.includes('困難')) {
     spreadId = 'holy_triangle_3';
     spreadName = '聖三角·破局解惑牌陣';
     cardCount = 3;
     reason = '針對具體棘手問題，剖析核心障礙本質並給予清晰的突破策略指引。';
-  } else if (q.includes('身心') || q.includes('累') || q.includes('壓力') || q.includes('平衡') || q.includes('焦慮') || q.includes('平靜') || q.includes('調適') || q.includes('渴望')) {
-    spreadId = 'mind_body_spirit_3';
-    spreadName = '身心靈·整全對齊牌陣';
-    cardCount = 3;
-    reason = '檢視自我內在心智思維、身體生活實相與靈魂真實渴望三個維度的能量平衡狀態。';
-  } else if (q.includes('深入') || q.includes('全面') || q.includes('年') || q.includes('整體') || q.includes('命運') || q.includes('轉折') || q.includes('十字')) {
+  } else if (cat === 'comprehensive' || q.includes('深入') || q.includes('全面') || q.includes('年') || q.includes('整體') || q.includes('命運') || q.includes('轉折') || q.includes('十字')) {
     spreadId = 'celtic_cross_10';
     spreadName = '凱爾特十字·全景深度牌陣';
     cardCount = 10;
     reason = '最完整、宏觀的正統大牌陣，十個牌位層層剖析核心、阻礙、潛意識根源至最終可能成果。';
+  } else if (cat === 'daily' || q.includes('今日') || q.includes('每天')) {
+    spreadId = 'daily_single';
+    spreadName = '每日一牌·心靈指引';
+    cardCount = 1;
+    reason = '專注於當下一天的核心能量、生活功課與潛在機遇，適合晨間啟迪與直覺訓練。';
   }
 
   const text = `### 🌟 為您推薦的研習牌陣：【${spreadName}（共 ${cardCount} 張牌）】
 
 #### 1. 推薦原因
-針對您所提出的核心課題「${question || '當前生活能量審視'}」${situation ? `（情境脈絡：${situation}）` : ''}：
+針對您所關注的${category ? `【${category}】` : ''}核心課題「${question || '當前生活能量審視'}」${situation ? `（情境脈絡：${situation}）` : ''}：
 ${reason}
 
 #### 2. 牌位結構與解讀指引
