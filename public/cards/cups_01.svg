@@ -1,0 +1,387 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 650" width="400" height="650">
+  <defs>
+    <!-- Background Sky Gradient -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a1128"/>
+      <stop offset="35%" stop-color="#142850"/>
+      <stop offset="60%" stop-color="#255178"/>
+      <stop offset="80%" stop-color="#387a9e"/>
+      <stop offset="100%" stop-color="#10334a"/>
+    </linearGradient>
+
+    <!-- Lake Water Gradient -->
+    <linearGradient id="lakeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#184e68"/>
+      <stop offset="30%" stop-color="#0e384e"/>
+      <stop offset="100%" stop-color="#071e2c"/>
+    </linearGradient>
+
+    <!-- Divine Halo Radial Glow -->
+    <radialGradient id="divineGlow" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#fffde7" stop-opacity="1"/>
+      <stop offset="20%" stop-color="#fef08a" stop-opacity="0.85"/>
+      <stop offset="45%" stop-color="#f59e0b" stop-opacity="0.45"/>
+      <stop offset="75%" stop-color="#38bdf8" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#1e3a8a" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Chalice Gold Metallic Gradient -->
+    <linearGradient id="goldChalice" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#92400e"/>
+      <stop offset="18%" stop-color="#d97706"/>
+      <stop offset="35%" stop-color="#fef08a"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="65%" stop-color="#fef08a"/>
+      <stop offset="85%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+
+    <!-- Inner Chalice Bowl Shadow Gradient -->
+    <radialGradient id="cupBowlInner" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="40%" stop-color="#fde68a"/>
+      <stop offset="75%" stop-color="#b45309"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </radialGradient>
+
+    <!-- Living Water Stream Gradient -->
+    <linearGradient id="waterStream" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="15%" stop-color="#e0f2fe"/>
+      <stop offset="50%" stop-color="#7dd3fc"/>
+      <stop offset="85%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Divine Hand Flesh Gradient -->
+    <linearGradient id="handFlesh" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#ffedd5"/>
+      <stop offset="60%" stop-color="#fed7aa"/>
+      <stop offset="90%" stop-color="#fdba74"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+
+    <!-- Divine Cloud Gradient -->
+    <radialGradient id="cloudGrad" cx="70%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="35%" stop-color="#f8fafc" stop-opacity="0.9"/>
+      <stop offset="70%" stop-color="#cbd5e1" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#64748b" stop-opacity="0.1"/>
+    </radialGradient>
+
+    <!-- Gold Border Gradient -->
+    <linearGradient id="goldBorder" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="25%" stop-color="#f59e0b"/>
+      <stop offset="50%" stop-color="#fffbeb"/>
+      <stop offset="75%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Yod Gold Light Gradient -->
+    <radialGradient id="yodGlow" cx="40%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#fef08a"/>
+      <stop offset="75%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </radialGradient>
+
+    <!-- Glow Filter -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="divineBright" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Base Card Background -->
+  <rect width="400" height="650" rx="16" fill="#060913"/>
+
+  <!-- Ornate Golden Card Outer Border -->
+  <rect x="8" y="8" width="384" height="634" rx="12" fill="none" stroke="url(#goldBorder)" stroke-width="2.5"/>
+  <rect x="14" y="14" width="372" height="622" rx="8" fill="none" stroke="#78350f" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Inner Art Area Clip -->
+  <g clip-path="url(#artClip)">
+    <clipPath id="artClip">
+      <rect x="18" y="18" width="364" height="614" rx="6"/>
+    </clipPath>
+
+    <!-- Sky Realm -->
+    <rect x="18" y="18" width="364" height="420" fill="url(#skyGrad)"/>
+
+    <!-- Subtle Celestial Stars -->
+    <g fill="#fef08a" opacity="0.6">
+      <circle cx="50" cy="50" r="1.2"/>
+      <circle cx="85" cy="72" r="1.5"/>
+      <circle cx="120" cy="45" r="0.9"/>
+      <circle cx="160" cy="65" r="1.3"/>
+      <circle cx="280" cy="55" r="1.4"/>
+      <circle cx="320" cy="80" r="1"/>
+      <circle cx="350" cy="48" r="1.6"/>
+      <circle cx="65" cy="110" r="1"/>
+      <circle cx="340" cy="125" r="1.2"/>
+    </g>
+
+    <!-- Lake Realm Below -->
+    <rect x="18" y="420" width="364" height="212" fill="url(#lakeGrad)"/>
+
+    <!-- Water Surface Ripples -->
+    <ellipse cx="200" cy="430" rx="170" ry="12" fill="none" stroke="#38bdf8" stroke-width="0.8" opacity="0.3"/>
+    <ellipse cx="200" cy="455" rx="155" ry="14" fill="none" stroke="#7dd3fc" stroke-width="1.2" opacity="0.4"/>
+    <ellipse cx="200" cy="485" rx="140" ry="16" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.35"/>
+    <ellipse cx="200" cy="520" rx="125" ry="18" fill="none" stroke="#0284c7" stroke-width="1" opacity="0.4"/>
+
+    <!-- Grand Divine Radiant Halo behind Chalice -->
+    <circle cx="200" cy="270" r="160" fill="url(#divineGlow)" filter="url(#divineBright)"/>
+
+    <!-- Radiant Divine Golden Rays -->
+    <g stroke="url(#goldBorder)" stroke-width="0.75" opacity="0.45">
+      <line x1="200" y1="270" x2="60" y2="130"/>
+      <line x1="200" y1="270" x2="100" y2="100"/>
+      <line x1="200" y1="270" x2="150" y2="80"/>
+      <line x1="200" y1="270" x2="200" y2="70"/>
+      <line x1="200" y1="270" x2="250" y2="80"/>
+      <line x1="200" y1="270" x2="300" y2="100"/>
+      <line x1="200" y1="270" x2="340" y2="130"/>
+      <line x1="200" y1="270" x2="50" y2="190"/>
+      <line x1="200" y1="270" x2="45" y2="250"/>
+      <line x1="200" y1="270" x2="50" y2="310"/>
+      <line x1="200" y1="270" x2="70" y2="370"/>
+      <line x1="200" y1="270" x2="330" y2="370"/>
+    </g>
+
+    <!-- Divine Luminous Cloud Bank on Right -->
+    <g filter="url(#softGlow)">
+      <path d="M 280,310 C 270,270 290,240 330,240 C 350,220 380,225 395,250 C 410,270 410,310 395,335 C 385,360 350,370 330,360 C 300,365 285,340 280,310 Z" fill="url(#cloudGrad)"/>
+      <path d="M 310,290 C 300,260 320,230 350,230 C 375,230 390,250 390,280 C 390,310 365,330 340,325 C 320,325 315,310 310,290 Z" fill="#ffffff" opacity="0.85"/>
+    </g>
+
+    <!-- The Divine Hand (Emerging from the Cloud to hold the Grail) -->
+    <g filter="url(#softGlow)">
+      <!-- Cloud cuff -->
+      <path d="M 350,305 C 335,285 320,290 305,300 C 295,295 285,305 285,315 C 285,325 300,335 320,335 C 340,335 355,320 350,305 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+      <!-- Wrist and Palm extending leftwards -->
+      <path d="M 300,305 C 280,300 250,298 232,310 C 220,318 200,335 185,335 C 175,335 170,325 180,315 C 195,300 215,292 235,290 C 260,288 285,295 300,305 Z" fill="url(#handFlesh)" stroke="#b45309" stroke-width="1"/>
+      <!-- Fingers cupping the Chalice Base -->
+      <path d="M 185,335 C 175,335 168,328 175,318 C 182,308 195,310 205,322 C 205,330 195,335 185,335 Z" fill="url(#handFlesh)"/>
+      <!-- Thumb resting gently -->
+      <path d="M 215,290 C 205,285 198,290 195,298 C 202,305 210,302 215,290 Z" fill="url(#handFlesh)"/>
+    </g>
+
+    <!-- 5 Cascading Streams of Living Water (Pouring from the Goblet into Lake) -->
+    <!-- Stream 1 (Far Left) -->
+    <path d="M 160,240 C 130,240 100,280 95,350 C 90,410 95,450 100,470" fill="none" stroke="url(#waterStream)" stroke-width="4.5" stroke-linecap="round" opacity="0.9"/>
+    <path d="M 160,240 C 130,240 100,280 95,350 C 90,410 95,450 100,470" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+
+    <!-- Stream 2 (Mid Left) -->
+    <path d="M 175,248 C 150,255 135,310 135,380 C 135,440 145,465 148,485" fill="none" stroke="url(#waterStream)" stroke-width="5" stroke-linecap="round" opacity="0.92"/>
+    <path d="M 175,248 C 150,255 135,310 135,380 C 135,440 145,465 148,485" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" opacity="0.95"/>
+
+    <!-- Stream 3 (Center Main Stream) -->
+    <path d="M 200,255 C 200,320 198,390 198,450 C 198,475 200,490 200,505" fill="none" stroke="url(#waterStream)" stroke-width="7" stroke-linecap="round"/>
+    <path d="M 200,255 C 200,320 198,390 198,450 C 198,475 200,490 200,505" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Stream 4 (Mid Right) -->
+    <path d="M 225,248 C 248,255 260,310 262,380 C 263,440 255,465 252,485" fill="none" stroke="url(#waterStream)" stroke-width="5" stroke-linecap="round" opacity="0.92"/>
+    <path d="M 225,248 C 248,255 260,310 262,380 C 263,440 255,465 252,485" fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" opacity="0.95"/>
+
+    <!-- Stream 5 (Far Right) -->
+    <path d="M 240,240 C 270,240 300,280 305,350 C 310,410 305,450 300,470" fill="none" stroke="url(#waterStream)" stroke-width="4.5" stroke-linecap="round" opacity="0.9"/>
+    <path d="M 240,240 C 270,240 300,280 305,350 C 310,410 305,450 300,470" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+
+    <!-- Water Influx Splash Rings in Lake -->
+    <g stroke="#e0f2fe" stroke-width="1.5" fill="none" opacity="0.75">
+      <ellipse cx="100" cy="470" rx="14" ry="4"/>
+      <ellipse cx="148" cy="485" rx="18" ry="5"/>
+      <ellipse cx="200" cy="505" rx="26" ry="7"/>
+      <ellipse cx="252" cy="485" rx="18" ry="5"/>
+      <ellipse cx="300" cy="470" rx="14" ry="4"/>
+    </g>
+
+    <!-- The Holy Grail / Golden Chalice -->
+    <g filter="url(#softGlow)">
+      <!-- Chalice Base Platform -->
+      <ellipse cx="200" cy="335" rx="38" ry="9" fill="url(#goldChalice)" stroke="#78350f" stroke-width="1.5"/>
+      <ellipse cx="200" cy="334" rx="34" ry="6" fill="#fef08a" opacity="0.7"/>
+
+      <!-- Chalice Stem & Knop -->
+      <path d="M 194,285 L 191,330 C 191,332 209,332 209,330 L 206,285 Z" fill="url(#goldChalice)" stroke="#78350f" stroke-width="1"/>
+      <!-- Jeweled Knop (Central Sphere) -->
+      <ellipse cx="200" cy="308" rx="12" ry="9" fill="url(#goldChalice)" stroke="#78350f" stroke-width="1.5"/>
+      <circle cx="200" cy="308" r="4.5" fill="#38bdf8" stroke="#0284c7" stroke-width="1"/>
+      <circle cx="199" cy="307" r="1.5" fill="#ffffff"/>
+
+      <!-- Main Chalice Bowl -->
+      <path d="M 148,235 C 148,290 170,300 200,300 C 230,300 252,290 252,235 C 235,248 165,248 148,235 Z" fill="url(#goldChalice)" stroke="#78350f" stroke-width="2"/>
+      
+      <!-- Chalice Inner Bowl Glow -->
+      <ellipse cx="200" cy="235" rx="52" ry="14" fill="url(#cupBowlInner)" stroke="#92400e" stroke-width="2"/>
+      <!-- Surface of Sacred Water inside Chalice -->
+      <ellipse cx="200" cy="236" rx="48" ry="11" fill="#7dd3fc" stroke="#38bdf8" stroke-width="1.5" opacity="0.95"/>
+      <ellipse cx="200" cy="235" rx="42" ry="8" fill="#ffffff" opacity="0.75"/>
+
+      <!-- Chalice Ornate Filigree Relief Details -->
+      <!-- Inscribed Sacred 'W' / M Letter or Cross on Chalice -->
+      <path d="M 188,260 L 194,276 L 200,265 L 206,276 L 212,260" fill="none" stroke="#78350f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 188,260 L 194,276 L 200,265 L 206,276 L 212,260" fill="none" stroke="#fef08a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Ornate Bell & Floral Relief on Chalice Rim -->
+      <path d="M 155,242 C 175,252 225,252 245,242" fill="none" stroke="#fef08a" stroke-width="1.5"/>
+      <circle cx="170" cy="254" r="3" fill="#f43f5e" stroke="#881337" stroke-width="0.8"/>
+      <circle cx="200" cy="285" r="3.5" fill="#10b981" stroke="#064e3b" stroke-width="0.8"/>
+      <circle cx="230" cy="254" r="3" fill="#f43f5e" stroke="#881337" stroke-width="0.8"/>
+    </g>
+
+    <!-- Holy Dove Descending from Heaven (Carrying Sacred Wafer) -->
+    <g filter="url(#divineBright)">
+      <!-- Dove Aura / Nimbus -->
+      <circle cx="200" cy="165" r="28" fill="#ffffff" opacity="0.35"/>
+      <circle cx="200" cy="165" r="18" fill="#fef08a" opacity="0.5"/>
+
+      <!-- Dove Body & Head (Facing Downward) -->
+      <!-- Wings Outstretched in Flight -->
+      <!-- Left Wing -->
+      <path d="M 195,165 C 180,150 155,142 145,152 C 140,158 152,168 170,172 C 182,175 192,172 195,165 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+      <path d="M 150,155 C 160,160 175,166 185,168" stroke="#94a3b8" stroke-width="0.8" fill="none"/>
+      <!-- Right Wing -->
+      <path d="M 205,165 C 220,150 245,142 255,152 C 260,158 248,168 230,172 C 218,175 208,172 205,165 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2"/>
+      <path d="M 250,155 C 240,160 225,166 215,168" stroke="#94a3b8" stroke-width="0.8" fill="none"/>
+      <!-- Tail Feathers Upward -->
+      <path d="M 196,150 L 193,135 C 193,132 207,132 207,135 L 204,150 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <!-- Body & Breast -->
+      <ellipse cx="200" cy="168" rx="8" ry="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <!-- Head -->
+      <circle cx="200" cy="182" r="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
+      <!-- Eye -->
+      <circle cx="198" cy="182" r="0.9" fill="#0f172a"/>
+      <!-- Beak Pointing Down -->
+      <polygon points="199,187 201,187 200,192" fill="#f59e0b"/>
+
+      <!-- Sacred Host / Wafer with Equal-Armed Cross -->
+      <circle cx="200" cy="200" r="8.5" fill="#ffffff" stroke="#d97706" stroke-width="1.2"/>
+      <circle cx="200" cy="200" r="7" fill="#fffbeb"/>
+      <!-- Inscribed Cross on Wafer -->
+      <line x1="200" y1="194.5" x2="200" y2="205.5" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="194.5" y1="200" x2="205.5" y2="200" stroke="#b45309" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- Radiating golden light from host -->
+      <circle cx="200" cy="200" r="11" fill="none" stroke="#fef08a" stroke-width="0.75" stroke-dasharray="2,2"/>
+    </g>
+
+    <!-- 26 Golden Sparkling Dewdrops / Yods Falling from Heaven -->
+    <g fill="url(#yodGlow)" stroke="#b45309" stroke-width="0.4" filter="url(#softGlow)">
+      <!-- Left side drops -->
+      <path d="M 80,240 C 78,245 82,248 84,248 C 86,248 88,245 80,240 Z"/>
+      <path d="M 110,210 C 108,215 112,218 114,218 C 116,218 118,215 110,210 Z"/>
+      <path d="M 70,300 C 68,305 72,308 74,308 C 76,308 78,305 70,300 Z"/>
+      <path d="M 115,280 C 113,285 117,288 119,288 C 121,288 123,285 115,280 Z"/>
+      <path d="M 90,360 C 88,365 92,368 94,368 C 96,368 98,365 90,360 Z"/>
+      <path d="M 130,340 C 128,345 132,348 134,348 C 136,348 138,345 130,340 Z"/>
+      <path d="M 110,410 C 108,415 112,418 114,418 C 116,418 118,415 110,410 Z"/>
+      <path d="M 145,215 C 143,220 147,223 149,223 C 151,223 153,220 145,215 Z"/>
+      <path d="M 135,170 C 133,175 137,178 139,178 C 141,178 143,175 135,170 Z"/>
+      <path d="M 160,185 C 158,190 162,193 164,193 C 166,193 168,190 160,185 Z"/>
+      <path d="M 120,245 C 118,250 122,253 124,253 C 126,253 128,250 120,245 Z"/>
+      <path d="M 85,160 C 83,165 87,168 89,168 C 91,168 93,165 85,160 Z"/>
+      <path d="M 60,210 C 58,215 62,218 64,218 C 66,218 68,215 60,210 Z"/>
+
+      <!-- Right side drops -->
+      <path d="M 290,210 C 288,215 292,218 294,218 C 296,218 298,215 290,210 Z"/>
+      <path d="M 320,240 C 318,245 322,248 324,248 C 326,248 328,245 320,240 Z"/>
+      <path d="M 275,275 C 273,280 277,283 279,283 C 281,283 283,280 275,275 Z"/>
+      <path d="M 330,300 C 328,305 332,308 334,308 C 336,308 338,305 330,300 Z"/>
+      <path d="M 285,340 C 283,345 287,348 289,348 C 291,348 293,345 285,340 Z"/>
+      <path d="M 315,360 C 313,365 317,368 319,368 C 321,368 323,365 315,360 Z"/>
+      <path d="M 290,410 C 288,415 292,418 294,418 C 296,418 298,415 290,410 Z"/>
+      <path d="M 255,215 C 253,220 257,223 259,223 C 261,223 263,220 255,215 Z"/>
+      <path d="M 265,170 C 263,175 267,178 269,178 C 271,178 273,175 265,170 Z"/>
+      <path d="M 240,185 C 238,190 242,193 244,193 C 246,193 248,190 240,185 Z"/>
+      <path d="M 280,245 C 278,250 282,253 284,253 C 286,253 288,250 280,245 Z"/>
+      <path d="M 315,160 C 313,165 317,168 319,168 C 321,168 323,165 315,160 Z"/>
+      <path d="M 340,210 C 338,215 342,218 344,218 C 346,218 348,215 340,210 Z"/>
+    </g>
+
+    <!-- Floating Lotus Water Lilies & Emerald Lily Pads in Lake -->
+    <!-- Lily Pad 1 (Left) -->
+    <ellipse cx="60" cy="530" rx="36" ry="12" fill="#047857" stroke="#064e3b" stroke-width="1.5"/>
+    <path d="M 60,530 L 90,528" stroke="#064e3b" stroke-width="1.5"/>
+    <!-- Blooming Pink Lotus 1 -->
+    <g transform="translate(60, 520)">
+      <path d="M -12,0 C -18,-15 0,-25 0,-25 C 0,-25 18,-15 12,0 Z" fill="#fda4af" stroke="#e11d48" stroke-width="1"/>
+      <path d="M -8,0 C -12,-12 0,-22 0,-22 C 0,-22 12,-12 8,0 Z" fill="#ffffff" opacity="0.9"/>
+      <circle cx="0" cy="-6" r="3" fill="#fef08a"/>
+    </g>
+
+    <!-- Lily Pad 2 (Right) -->
+    <ellipse cx="340" cy="540" rx="38" ry="13" fill="#047857" stroke="#064e3b" stroke-width="1.5"/>
+    <path d="M 340,540 L 310,542" stroke="#064e3b" stroke-width="1.5"/>
+    <!-- Blooming White Lotus 2 -->
+    <g transform="translate(340, 530)">
+      <path d="M -14,0 C -20,-16 0,-26 0,-26 C 0,-26 20,-16 14,0 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+      <path d="M -9,0 C -14,-13 0,-22 0,-22 C 0,-22 14,-13 9,0 Z" fill="#fbcfe8" opacity="0.8"/>
+      <circle cx="0" cy="-6" r="3.5" fill="#fef08a"/>
+    </g>
+
+    <!-- Center Floating Lotus Lily Pad & Grand Sacred Lotus -->
+    <ellipse cx="200" cy="570" rx="46" ry="15" fill="#065f46" stroke="#064e3b" stroke-width="1.5"/>
+    <path d="M 200,570 L 235,565" stroke="#064e3b" stroke-width="1.5"/>
+    <g transform="translate(200, 555)">
+      <!-- Outer Petals -->
+      <path d="M -20,0 C -30,-20 0,-32 0,-32 C 0,-32 30,-20 20,0 Z" fill="#fecdd3" stroke="#e11d48" stroke-width="1.2"/>
+      <!-- Inner Petals -->
+      <path d="M -14,0 C -22,-16 0,-28 0,-28 C 0,-28 22,-16 14,0 Z" fill="#ffffff" stroke="#f43f5e" stroke-width="1"/>
+      <path d="M -8,0 C -12,-12 0,-22 0,-22 C 0,-22 12,-12 8,0 Z" fill="#fff1f2"/>
+      <!-- Golden Core -->
+      <circle cx="0" cy="-8" r="4.5" fill="#fef08a" stroke="#d97706" stroke-width="1"/>
+      <circle cx="0" cy="-8" r="2" fill="#f59e0b"/>
+    </g>
+
+    <!-- Additional Lily Pads on lake borders -->
+    <ellipse cx="130" cy="585" rx="26" ry="9" fill="#047857" opacity="0.7"/>
+    <ellipse cx="280" cy="590" rx="30" ry="10" fill="#047857" opacity="0.7"/>
+  </g>
+
+  <!-- Top Title Banner: Roman Numeral & Title -->
+  <g>
+    <!-- Top Plaque Background -->
+    <rect x="110" y="24" width="180" height="26" rx="6" fill="#0a0f1d" stroke="url(#goldBorder)" stroke-width="1.2"/>
+    <text x="200" y="41" text-anchor="middle" font-family="Cinzel, 'Times New Roman', Georgia, serif" font-size="12" font-weight="bold" fill="#fef08a" letter-spacing="3">
+      ACE OF CUPS
+    </text>
+  </g>
+
+  <!-- Four Classical Esoteric Corner Gold Rosettes -->
+  <g fill="url(#goldBorder)" stroke="#78350f" stroke-width="0.8">
+    <!-- Top-Left -->
+    <circle cx="26" cy="26" r="5"/>
+    <circle cx="26" cy="26" r="2" fill="#fffbeb"/>
+    <!-- Top-Right -->
+    <circle cx="374" cy="26" r="5"/>
+    <circle cx="374" cy="26" r="2" fill="#fffbeb"/>
+    <!-- Bottom-Left -->
+    <circle cx="26" cy="624" r="5"/>
+    <circle cx="26" cy="624" r="2" fill="#fffbeb"/>
+    <!-- Bottom-Right -->
+    <circle cx="374" cy="624" r="5"/>
+    <circle cx="374" cy="624" r="2" fill="#fffbeb"/>
+  </g>
+
+  <!-- Bottom Title Banner: Chinese & English Card Name -->
+  <g>
+    <rect x="80" y="598" width="240" height="34" rx="8" fill="#0a0f1d" stroke="url(#goldBorder)" stroke-width="1.5"/>
+    <text x="200" y="618" text-anchor="middle" font-family="'Noto Serif TC', 'Songti TC', Georgia, serif" font-size="14" font-weight="bold" fill="#fef08a" letter-spacing="4">
+      聖杯一
+    </text>
+    <text x="200" y="628" text-anchor="middle" font-family="Cinzel, 'Times New Roman', serif" font-size="8" fill="#cbd5e1" letter-spacing="2">
+      THE ACE OF CUPS • 💧 WATER
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,7 @@
+{
+  "name": "TarotSage - 塔羅自學筆記與每日占卜研習",
+  "description": "專為塔羅自學者打造的每日抽牌儀式、78張牌意圖鑑、AI網路牌意即時搜尋與深度統計分析系統。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
