@@ -14,6 +14,7 @@ import {
   GOOGLE_SPREADSHEET_NAME
 } from '../utils/googleSheetsSync';
 import { User } from 'firebase/auth';
+import { DomainAuthorizationModal } from './DomainAuthorizationModal';
 import { 
   X, 
   Check, 
@@ -52,6 +53,7 @@ export const GoogleSheetsSettingsModal: React.FC<GoogleSheetsSettingsModalProps>
   const [codeCopied, setCodeCopied] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [isAuthorizing, setIsAuthorizing] = useState<boolean>(false);
+  const [isDomainModalOpen, setIsDomainModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -109,9 +111,14 @@ export const GoogleSheetsSettingsModal: React.FC<GoogleSheetsSettingsModalProps>
         if (onUrlUpdated) onUrlUpdated(res.accessToken);
       }
     } catch (err: any) {
+      if (err?.isUnauthorizedDomain) {
+        setIsDomainModalOpen(true);
+      }
       setTestResult({
         success: false,
-        message: `Google 帳號連線失敗：${err?.message || '使用者已取消授權'}`,
+        message: err?.isUnauthorizedDomain
+          ? `未授權網域：您的 Vercel 部署網址尚未在 Firebase 控制台設定 Authorized Domains，請點選下方指引設定，或直接切換至 Webhook 頁籤免網域同步。`
+          : `Google 帳號連線失敗：${err?.message || '使用者已取消授權'}`,
       });
     } finally {
       setIsAuthorizing(false);
@@ -479,6 +486,12 @@ function doPost(e) {
           </button>
         </div>
       </div>
+
+      <DomainAuthorizationModal
+        isOpen={isDomainModalOpen}
+        onClose={() => setIsDomainModalOpen(false)}
+        onOpenWebhookTab={() => setActiveTab('webhook')}
+      />
     </div>
   );
 };

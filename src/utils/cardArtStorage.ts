@@ -21,20 +21,45 @@ export const BUILT_IN_CARD_ARTS: Record<string, string> = ALL_CARD_IDS.reduce((a
   return acc;
 }, {} as Record<string, string>);
 
+/**
+ * Retrieves the current card art mapping, sanitizing stale .svg or invalid files
+ */
 export function getCustomCardArtMap(): CustomCardArtMap {
   if (typeof window === 'undefined') return { ...BUILT_IN_CARD_ARTS };
   try {
     const raw = localStorage.getItem(CUSTOM_CARD_ART_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
-    return { ...BUILT_IN_CARD_ARTS, ...parsed };
+    
+    // Clean up any stale .svg or broken paths
+    const cleaned: Record<string, string> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === 'string' && !v.endsWith('.svg') && v.trim() !== '') {
+        cleaned[k] = v;
+      }
+    }
+    return { ...BUILT_IN_CARD_ARTS, ...cleaned };
   } catch {
     return { ...BUILT_IN_CARD_ARTS };
   }
 }
 
-export function getCardArt(cardId: string): string | undefined {
+export function getCardArt(cardId: string): string {
   const map = getCustomCardArtMap();
-  return map[cardId] || BUILT_IN_CARD_ARTS[cardId] || `/cards/${cardId}.jpg`;
+  const art = map[cardId];
+  if (art && !art.endsWith('.svg')) {
+    return art;
+  }
+  return BUILT_IN_CARD_ARTS[cardId] || `/cards/${cardId}.jpg`;
+}
+
+/**
+ * Explicitly apply all 78 newly uploaded authentic photos in /public/cards/*.jpg
+ */
+export function applyAllOfficialCards(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(CUSTOM_CARD_ART_KEY, JSON.stringify({ ...BUILT_IN_CARD_ARTS }));
+    window.dispatchEvent(new CustomEvent(ART_CHANGE_EVENT, { detail: { cardId: 'all', url: null } }));
+  }
 }
 
 // Automatically detect any image files placed into /public/cards
@@ -49,6 +74,7 @@ export async function syncServerCardArts(): Promise<void> {
       let changed = false;
 
       for (const file of files) {
+        if (file.endsWith('.svg')) continue;
         const lastDot = file.lastIndexOf('.');
         if (lastDot > 0) {
           const cardId = file.substring(0, lastDot);
@@ -138,17 +164,8 @@ export async function removeCardArt(cardId: string): Promise<void> {
 }
 
 export async function resetAllCardArts(): Promise<void> {
-  const map = getCustomCardArtMap();
-  const cardIds = Object.keys(map);
-
   if (typeof window !== 'undefined') {
     localStorage.removeItem(CUSTOM_CARD_ART_KEY);
-  }
-
-  for (const id of cardIds) {
-    try {
-      await fetch(`/api/cards/${id}`, { method: 'DELETE' });
-    } catch {}
   }
 
   if (typeof window !== 'undefined') {
@@ -157,15 +174,15 @@ export async function resetAllCardArts(): Promise<void> {
 }
 
 // React Hook to watch a card's current art URL
-export function useCardArt(cardId?: string): string | undefined {
-  const [artUrl, setArtUrl] = useState<string | undefined>(() => {
-    if (!cardId) return undefined;
+export function useCardArt(cardId?: string): string {
+  const [artUrl, setArtUrl] = useState<string>(() => {
+    if (!cardId) return '';
     return getCardArt(cardId);
   });
 
   useEffect(() => {
     if (!cardId) {
-      setArtUrl(undefined);
+      setArtUrl('');
       return;
     }
 

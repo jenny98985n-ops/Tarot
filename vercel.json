@@ -2,17 +2,24 @@
   "version": 2,
   "buildCommand": "vite build",
   "outputDirectory": "dist",
-  "rewrites": [
+  "headers": [
     {
-      "source": "/cards/:path*",
-      "destination": "/cards/:path*"
-    },
+      "source": "/cards/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!cards/|assets/).*)",
       "destination": "/index.html"
     }
   ]

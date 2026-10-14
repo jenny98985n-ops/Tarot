@@ -20,13 +20,40 @@ import {
 
 interface SpreadAdvisorProps {
   onSpreadSaved?: () => void;
+  initialSpreadId?: string;
+  initialQuestion?: string;
 }
 
-export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) => {
-  const [selectedSpread, setSelectedSpread] = useState<SpreadTemplate>(SPREAD_TEMPLATES[1]); // Default Past Present Future
-  const [question, setQuestion] = useState<string>('我近期事業方向的轉化與未來走勢如何？');
+export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ 
+  onSpreadSaved,
+  initialSpreadId,
+  initialQuestion,
+}) => {
+  const [selectedSpread, setSelectedSpread] = useState<SpreadTemplate>(() => {
+    if (initialSpreadId) {
+      return SPREAD_TEMPLATES.find((t) => t.id === initialSpreadId) || SPREAD_TEMPLATES[1];
+    }
+    return SPREAD_TEMPLATES[1];
+  });
+  const [question, setQuestion] = useState<string>(initialQuestion || '我近期事業方向的轉化與未來走勢如何？');
   const [aiRecommending, setAiRecommending] = useState<boolean>(false);
   const [aiRecommendationText, setAiRecommendationText] = useState<string>('');
+  const [recommendedSpreadData, setRecommendedSpreadData] = useState<{
+    id: string;
+    name: string;
+    cardCount: number;
+    reason: string;
+  } | null>(null);
+
+  React.useEffect(() => {
+    if (initialSpreadId) {
+      const found = SPREAD_TEMPLATES.find((t) => t.id === initialSpreadId);
+      if (found) setSelectedSpread(found);
+    }
+    if (initialQuestion) {
+      setQuestion(initialQuestion);
+    }
+  }, [initialSpreadId, initialQuestion]);
   
   // Interactive reading state
   const [activeCards, setActiveCards] = useState<SpreadReadingCard[]>([]);
@@ -44,6 +71,7 @@ export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) =
     if (!question.trim()) return;
     setAiRecommending(true);
     setAiRecommendationText('');
+    setRecommendedSpreadData(null);
     try {
       const res = await fetch('/api/tarot/spread-recommend', {
         method: 'POST',
@@ -53,6 +81,14 @@ export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) =
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '推薦失敗');
       setAiRecommendationText(data.recommendation);
+      if (data.recommendedSpreadId) {
+        setRecommendedSpreadData({
+          id: data.recommendedSpreadId,
+          name: data.recommendedSpreadName,
+          cardCount: data.cardCount,
+          reason: data.reason,
+        });
+      }
     } catch (err: any) {
       setAiRecommendationText(`推薦時發生錯誤：${err.message}`);
     } finally {
@@ -208,8 +244,35 @@ export const SpreadAdvisor: React.FC<SpreadAdvisorProps> = ({ onSpreadSaved }) =
             </div>
 
             {aiRecommendationText && (
-              <div className="p-4 rounded-xl bg-stone-950/80 border border-amber-500/30 text-xs text-stone-200 leading-relaxed whitespace-pre-line mt-3">
-                {aiRecommendationText}
+              <div className="space-y-3 mt-3">
+                <div className="p-4 rounded-xl bg-stone-950/80 border border-amber-500/30 text-xs text-stone-200 leading-relaxed whitespace-pre-line">
+                  {aiRecommendationText}
+                </div>
+
+                {recommendedSpreadData && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/40 animate-fade-in shadow-lg">
+                    <div className="text-xs">
+                      <span className="font-serif font-bold text-amber-200 text-sm">
+                        推薦牌陣：【{recommendedSpreadData.name} ({recommendedSpreadData.cardCount} 張)】
+                      </span>
+                      <p className="text-[11px] text-stone-300 mt-0.5">{recommendedSpreadData.reason}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const found = SPREAD_TEMPLATES.find((t) => t.id === recommendedSpreadData.id);
+                        if (found) {
+                          setSelectedSpread(found);
+                          sounds.playCardFlip();
+                        }
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-serif font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap shadow-md shadow-amber-500/20 self-stretch sm:self-auto justify-center"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>立即選用此牌陣</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

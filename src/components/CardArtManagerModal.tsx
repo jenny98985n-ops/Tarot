@@ -7,6 +7,7 @@ import {
   setCardArt, 
   removeCardArt, 
   resetAllCardArts, 
+  applyAllOfficialCards,
   CustomCardArtMap 
 } from '../utils/cardArtStorage';
 import { 
@@ -228,6 +229,19 @@ export const CardArtManagerModal: React.FC<CardArtManagerModalProps> = ({
 
           {/* Batch Upload & Reset Buttons */}
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => {
+                applyAllOfficialCards();
+                reloadData();
+                showToast('已成功套用 78 張全新標準偉特牌庫！');
+              }}
+              className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg transition-colors flex items-center gap-1.5 font-medium shadow-sm"
+              title="將所有 78 張牌面設定為 public/cards/ 下最新上傳的高清圖片"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              套用最新 78 張上傳牌面
+            </button>
+
             <label className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-semibold rounded-lg cursor-pointer transition-all flex items-center gap-1.5 shadow-sm">
               <Upload className="w-3.5 h-3.5" />
               批次選取圖片匯入

@@ -33,8 +33,26 @@ export const TarotCardView: React.FC<TarotCardViewProps> = ({
 }) => {
   const isReversed = orientation === 'reversed';
   const storedArtUrl = useCardArt(card?.id);
-  const activeArtUrl = customImageUrl || storedArtUrl || card?.imageUrl;
+  const rawArtUrl = customImageUrl || storedArtUrl || card?.imageUrl;
+  const defaultJpg = card?.id ? `/cards/${card.id}.jpg` : '';
+  const initialUrl = (rawArtUrl && !rawArtUrl.endsWith('.svg')) ? rawArtUrl : defaultJpg;
+
+  const [currentImgSrc, setCurrentImgSrc] = useState<string>(initialUrl);
   const [imageLoadError, setImageLoadError] = useState(false);
+
+  React.useEffect(() => {
+    const nextUrl = (rawArtUrl && !rawArtUrl.endsWith('.svg')) ? rawArtUrl : defaultJpg;
+    setCurrentImgSrc(nextUrl);
+    setImageLoadError(false);
+  }, [rawArtUrl, defaultJpg]);
+
+  const handleImageError = () => {
+    if (currentImgSrc !== defaultJpg && defaultJpg) {
+      setCurrentImgSrc(defaultJpg);
+    } else {
+      setImageLoadError(true);
+    }
+  };
 
   // Tarot cards (RWS) are 720 x 1200 (exact aspect ratio 3:5).
   // Using aspect-[3/5] guarantees exact proportion with zero clipping.
@@ -125,18 +143,18 @@ export const TarotCardView: React.FC<TarotCardViewProps> = ({
       } ${className}`}
     >
       {/* Full authentic card art view (Complete Rider-Waite Card - Zero Clipping) */}
-      {activeArtUrl && !imageLoadError ? (
+      {currentImgSrc && !imageLoadError ? (
         <div
           className={`w-full h-full rounded-lg border border-amber-400/40 bg-stone-950 flex items-center justify-center relative overflow-hidden transition-transform duration-500 shadow-inner ${
             isReversed ? 'rotate-180' : ''
           }`}
         >
           <img
-            src={activeArtUrl}
+            src={currentImgSrc}
             alt={card.name}
             className="w-full h-full object-contain select-none"
             loading="lazy"
-            onError={() => setImageLoadError(true)}
+            onError={handleImageError}
           />
         </div>
       ) : (

@@ -16,6 +16,14 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState<number>(0);
   const [isSheetsModalOpen, setIsSheetsModalOpen] = useState<boolean>(false);
   const [isArtModalOpen, setIsArtModalOpen] = useState<boolean>(false);
+  const [pendingSpreadId, setPendingSpreadId] = useState<string | undefined>(undefined);
+  const [pendingSpreadQuestion, setPendingSpreadQuestion] = useState<string | undefined>(undefined);
+
+  const handleNavigateToSpread = (spreadId: string, question: string) => {
+    setPendingSpreadId(spreadId);
+    setPendingSpreadQuestion(question);
+    setActiveTab('spreads');
+  };
 
   useEffect(() => {
     // Automatically detect and sync any card images added to public/cards
@@ -107,7 +115,10 @@ export default function App() {
 
           {/* Zone 3: Actions with Google account & Sheets settings */}
           <div className="flex items-center gap-2 shrink-0">
-            <GoogleAccountButton compact />
+            <GoogleAccountButton 
+              compact 
+              onOpenSheetsSettings={() => setIsSheetsModalOpen(true)}
+            />
 
             <button
               onClick={() => setIsSheetsModalOpen(true)}
@@ -186,6 +197,7 @@ export default function App() {
             key={`daily_${refreshKey}`}
             onReadingSaved={handleReadingSaved}
             onNavigateToJournal={() => setActiveTab('journal')}
+            onNavigateToSpread={handleNavigateToSpread}
           />
         )}
 
@@ -199,7 +211,9 @@ export default function App() {
 
         {activeTab === 'spreads' && (
           <SpreadAdvisor
-            key={`spreads_${refreshKey}`}
+            key={`spreads_${refreshKey}_${pendingSpreadId || 'default'}`}
+            initialSpreadId={pendingSpreadId}
+            initialQuestion={pendingSpreadQuestion}
             onSpreadSaved={handleReadingSaved}
           />
         )}

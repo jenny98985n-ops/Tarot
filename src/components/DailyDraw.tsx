@@ -31,12 +31,15 @@ import {
   RefreshCw,
   Loader2,
   Copy,
-  BookOpen
+  BookOpen,
+  ArrowRight,
+  X
 } from 'lucide-react';
 
 interface DailyDrawProps {
   onReadingSaved?: () => void;
   onNavigateToJournal?: () => void;
+  onNavigateToSpread?: (spreadId: string, question: string) => void;
 }
 
 const QUESTION_PRESETS = [
@@ -50,6 +53,7 @@ const QUESTION_PRESETS = [
 export const DailyDraw: React.FC<DailyDrawProps> = ({
   onReadingSaved,
   onNavigateToJournal,
+  onNavigateToSpread,
 }) => {
   const [step, setStep] = useState<'prompt' | 'shuffling' | 'picking' | 'revealed'>('prompt');
   const [drawMode, setDrawMode] = useState<'virtual' | 'physical'>('virtual');
@@ -83,6 +87,41 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
   const [isAiInterpreting, setIsAiInterpreting] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [copiedAi, setCopiedAi] = useState<boolean>(false);
+
+  // AI Spread Recommendation state
+  const [isRecommendingSpread, setIsRecommendingSpread] = useState<boolean>(false);
+  const [spreadRecommendation, setSpreadRecommendation] = useState<{
+    recommendation: string;
+    recommendedSpreadId: string;
+    recommendedSpreadName: string;
+    cardCount: number;
+    reason: string;
+  } | null>(null);
+
+  const handleRecommendSpread = async () => {
+    if (!question.trim()) return;
+    setIsRecommendingSpread(true);
+    setSpreadRecommendation(null);
+    try {
+      const res = await fetch('/api/tarot/spread-recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question }),
+      });
+      const data = await res.json();
+      setSpreadRecommendation({
+        recommendation: data.recommendation,
+        recommendedSpreadId: data.recommendedSpreadId || 'time_flow_3',
+        recommendedSpreadName: data.recommendedSpreadName || '時間之流·聖三牌陣',
+        cardCount: data.cardCount || 3,
+        reason: data.reason || '契合此提問之探尋焦點',
+      });
+    } catch (e: any) {
+      console.error('Failed to get spread recommendation:', e);
+    } finally {
+      setIsRecommendingSpread(false);
+    }
+  };
 
   // Google Sheets sync state
   const [isSheetsModalOpen, setIsSheetsModalOpen] = useState<boolean>(false);
@@ -718,6 +757,81 @@ export const DailyDraw: React.FC<DailyDrawProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* AI Spread Recommendation Button */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleRecommendSpread}
+                disabled={isRecommendingSpread}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-purple-950/80 via-stone-900 to-amber-950/80 hover:from-purple-900/90 hover:to-amber-900/90 border border-purple-500/40 hover:border-amber-400/60 text-purple-200 text-xs font-serif font-semibold shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+                title="AI 依據您輸入的問題，分析並推薦最適合此課題的塔羅牌陣"
+              >
+                <Bot className="w-4 h-4 text-purple-400" />
+                <span>🔮 依我的提問建議選擇哪種牌陣</span>
+                {isRecommendingSpread && <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />}
+              </button>
+            </div>
+
+            {/* AI Spread Recommendation Result Banner */}
+            {spreadRecommendation && (
+              <div className="text-left p-4 rounded-2xl bg-gradient-to-br from-stone-950 via-[#151224] to-stone-950 border border-purple-500/40 shadow-2xl space-y-3.5 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between pb-2 border-b border-purple-500/20">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-purple-500/20 text-purple-300">
+                      <Sparkles className="w-4 h-4" />
+                    </span>
+                    <div>
+                      <h4 className="font-serif font-bold text-amber-200 text-sm">
+                        AI 導師推薦牌陣：【{spreadRecommendation.recommendedSpreadName}（共 {spreadRecommendation.cardCount} 張牌）】
+                      </h4>
+                      <p className="text-[11px] text-purple-300/80">
+                        {spreadRecommendation.reason}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSpreadRecommendation(null)}
+                    className="p-1 text-stone-400 hover:text-stone-200 rounded-lg hover:bg-stone-800 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="text-xs text-stone-200 leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto pr-1">
+                  {spreadRecommendation.recommendation}
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-2 border-t border-stone-800/80">
+                  <span className="text-[11px] text-stone-400">
+                    是否要切換至該牌陣展開多牌深度推演？
+                  </span>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => setSpreadRecommendation(null)}
+                      className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg border border-stone-700 hover:bg-stone-800 text-stone-300 text-xs transition-colors"
+                    >
+                      維持單張抽牌
+                    </button>
+                    {onNavigateToSpread && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onNavigateToSpread(spreadRecommendation.recommendedSpreadId, question);
+                        }}
+                        className="flex-1 sm:flex-none px-4 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-950 font-serif font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>立即以此牌陣抽牌 ({spreadRecommendation.cardCount}張)</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Workflow Guidance Card */}
             <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-300/90 leading-relaxed text-left flex items-start gap-2.5">

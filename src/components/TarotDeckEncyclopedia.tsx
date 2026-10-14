@@ -6,6 +6,7 @@ import { WebSearchModal } from './WebSearchModal';
 import { CardArtManagerModal } from './CardArtManagerModal';
 import { PhilosophicalAssociationModal } from './PhilosophicalAssociationModal';
 import { getCardMasteryMap, saveCardMasteryNote } from '../utils/storage';
+import { applyAllOfficialCards } from '../utils/cardArtStorage';
 import { 
   Search, 
   Sparkles, 
@@ -49,6 +50,12 @@ export const TarotDeckEncyclopedia: React.FC<TarotDeckEncyclopediaProps> = ({
   const [isArtModalOpen, setIsArtModalOpen] = useState<boolean>(false);
   const [isFullscreenCardOpen, setIsFullscreenCardOpen] = useState<boolean>(false);
   const [masteryRefreshKey, setMasteryRefreshKey] = useState<number>(0);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const masteryMap = useMemo(() => getCardMasteryMap(), [masteryRefreshKey]);
 
@@ -109,17 +116,29 @@ export const TarotDeckEncyclopedia: React.FC<TarotDeckEncyclopediaProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => {
+                applyAllOfficialCards();
+                showToast('✦ 已成功套用全新上傳的 78 張標準偉特牌典照片！');
+              }}
+              className="px-3.5 py-1.5 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl transition-all flex items-center gap-1.5 shadow-sm font-medium"
+              title="將所有 78 張牌面立即設定為最新上傳的標準大圖"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              套用最新 78 張上傳牌面
+            </button>
+
             <button
               onClick={() => setIsArtModalOpen(true)}
-              className="px-3 py-1.5 text-xs bg-stone-800/90 hover:bg-stone-700 text-amber-200 border border-amber-500/30 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
+              className="px-3 py-1.5 text-xs bg-stone-800/90 hover:bg-stone-700 text-stone-200 border border-stone-700 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
               title="管理 78 張自訂牌面與圖片資料夾"
             >
               <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-              自訂牌面圖片庫
+              自訂牌面管理
             </button>
 
-            <div className="text-xs text-stone-400 tabular-nums">
+            <div className="text-xs text-stone-400 tabular-nums hidden sm:block">
               共收錄 <strong className="text-amber-300">78</strong> 張完整牌卡
             </div>
           </div>
@@ -574,6 +593,14 @@ export const TarotDeckEncyclopedia: React.FC<TarotDeckEncyclopediaProps> = ({
               標準 720×1200 高清古典萊德偉特塔羅牌面 · 頂部羅馬數字與底部牌名全部完整呈現
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-amber-400 text-stone-950 font-serif font-semibold text-xs shadow-2xl flex items-center gap-2 animate-bounce">
+          <Check className="w-4 h-4 text-emerald-950" />
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

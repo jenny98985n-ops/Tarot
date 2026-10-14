@@ -16,6 +16,7 @@ export const auth = getAuth(app);
 export const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/presentations',
 ];
 
 const provider = new GoogleAuthProvider();
@@ -52,8 +53,20 @@ export const initAuth = (
   });
 };
 
+export interface GoogleSignInResult {
+  user: User;
+  accessToken: string;
+}
+
+export interface GoogleAuthErrorInfo {
+  code: string;
+  message: string;
+  domain: string;
+  isUnauthorizedDomain: boolean;
+}
+
 // Must be called from a button click or user interaction
-export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
+export const googleSignIn = async (): Promise<GoogleSignInResult | null> => {
   try {
     isSigningIn = true;
     const result = await signInWithPopup(auth, provider);
@@ -66,8 +79,24 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     cachedUser = result.user;
     return { user: result.user, accessToken: cachedAccessToken };
   } catch (error: any) {
+    const code = error?.code || '';
+    const domain = typeof window !== 'undefined' ? window.location.hostname : '';
+    const isUnauthorizedDomain = 
+      code === 'auth/unauthorized-domain' || 
+      error?.message?.includes('unauthorized-domain') ||
+      error?.message?.includes('authorized domain');
+
     console.error('Google Sign in error:', error);
-    throw error;
+
+    const err = new Error(
+      isUnauthorizedDomain
+        ? `未授權網域 (auth/unauthorized-domain)：您的 Vercel 部署網址「${domain}」尚未加入 Firebase 控制台的 Authorized Domains 清單中。`
+        : (error?.message || 'Google 帳號連線失敗')
+    ) as any;
+    err.code = code;
+    err.domain = domain;
+    err.isUnauthorizedDomain = isUnauthorizedDomain;
+    throw err;
   } finally {
     isSigningIn = false;
   }
